@@ -1,0 +1,85 @@
+import { test, expect } from '@playwright/test';
+
+test('habitación: 50 lomos, acercamiento, ficha y vuelta con Escape', async ({page})=>{
+  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
+  await page.goto('/');
+  await expect(page.getByRole('heading',{name:/Todos tus mundos/})).toBeVisible();
+  await expect(page.locator('.case')).toHaveCount(50);
+  await page.getByRole('button',{name:'Acercarse a la estantería'}).click();
+  await expect(page.getByRole('heading',{name:'Historias por vivir.'})).toBeVisible();
+  await page.locator('.case').first().click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Requisitos mínimos',exact:false})).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('heading',{name:/Todos tus mundos/})).toBeVisible();
+  await page.mouse.move(10, 450);
+  await page.locator('.scene').evaluate(async el=>{await Promise.all(el.getAnimations().map(a=>a.finished.catch(()=>{})));});
+  await page.screenshot({path:'test-results/room.png'});
+  expect(errors).toEqual([]);
+});
+test('buscador, filtros por tienda y género, estado vacío y restablecer',async({page})=>{
+  await page.goto('/');
+  await page.getByRole('textbox',{name:'Buscar en mi biblioteca'}).fill('Hollow');
+  await expect(page.locator('.game-card')).toHaveCount(1);
+  await page.getByLabel('Tienda',{exact:true}).selectOption('Epic Games');
+  await expect(page.getByRole('heading',{name:'No encontramos esa aventura'})).toBeVisible();
+  await page.getByRole('button',{name:'Restablecer filtros'}).click();
+  await expect(page.locator('.game-card')).toHaveCount(60);
+  await page.getByLabel('Tienda',{exact:true}).selectOption('Riot Games');
+  await page.getByLabel('Género',{exact:true}).selectOption('Acción');
+  await expect(page.locator('.game-card')).toHaveCount(1);
+  await expect(page.locator('.card-details>button')).toHaveText('VALORANT');
+});
+test('favoritos persisten y se fijan en la estantería',async({page})=>{
+  await page.goto('/');
+  await page.getByRole('textbox',{name:'Buscar en mi biblioteca'}).fill('Unpacking');
+  await page.getByRole('button',{name:'Añadir a favoritos: Unpacking'}).click();
+  await page.reload();
+  await page.getByRole('navigation',{name:'Filtrar biblioteca'}).getByRole('button',{name:'Favoritos'}).click();
+  await expect(page.locator('.game-card')).toHaveCount(5);
+  await expect(page.getByRole('button',{name:'Quitar de favoritos: Unpacking'})).toHaveAttribute('aria-pressed','true');
+  await page.getByRole('button',{name:'Volver a mi habitación'}).click();
+  await expect(page.locator('.case[aria-label="Ver Unpacking"]')).toHaveCount(1);
+});
+test('juego sin instalar muestra Descargar y explica el estado de demostración',async({page})=>{
+  await page.goto('/');
+  await page.getByRole('textbox',{name:'Buscar en mi biblioteca'}).fill('Red Dead');
+  await page.getByRole('button',{name:'Ver Red Dead Redemption 2',exact:true}).click();
+  await page.getByRole('button',{name:'Descargar',exact:true}).click();
+  await expect(page.getByRole('dialog').getByRole('status')).toContainText('Vista previa');
+  await expect(page.getByRole('dialog')).toContainText('Las tiendas todavía no están conectadas');
+});
+test('ordenador, opciones de accesibilidad y personalización se conservan',async({page})=>{
+  await page.goto('/');
+  await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).click();
+  await expect(page.getByRole('dialog')).toContainText('Riot Games');
+  await page.getByRole('checkbox',{name:/Reducir animaciones/}).check();
+  await page.keyboard.press('Escape');
+  await page.getByRole('button',{name:'Personalizar',exact:true}).click();
+  await page.getByRole('button',{name:/Noche Solo una partida/}).click();
+  await page.getByRole('button',{name:'Paredes: Azul bruma'}).click();
+  await page.getByRole('button',{name:'Sábanas: Terracota'}).click();
+  await page.keyboard.press('Escape');
+  await page.reload();
+  await expect(page.locator('main')).toHaveClass(/mood-night/);
+  await expect(page.locator('main')).toHaveClass(/reduce-motion/);
+  await expect(page.locator('.wall-tint')).toHaveCSS('background-color','rgb(74, 99, 125)');
+  await expect(page.locator('.bed-tint')).toHaveCSS('background-color','rgb(152, 90, 104)');
+  await page.getByRole('button',{name:'Personalizar',exact:true}).click();
+  await page.getByRole('button',{name:'Restaurar habitación original'}).click();
+  await expect(page.locator('.wall-tint')).toHaveCount(0);
+});
+test('ventana compacta: biblioteca y diálogo utilizables',async({page})=>{
+  await page.setViewportSize({width:1024,height:650});
+  await page.goto('/');
+  await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('button',{name:/Biblioteca/}).click();
+  await expect(page.locator('.game-card')).toHaveCount(60);
+  await page.locator('.scene').evaluate(async el=>{await Promise.all(el.getAnimations().map(a=>a.finished.catch(()=>{})));});
+  await page.screenshot({path:'test-results/library.png'});
+  await page.getByRole('button',{name:'Ver Hollow Knight',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Jugar',exact:true})).toBeVisible();
+  await page.screenshot({path:'test-results/details.png'});
+  await page.getByRole('button',{name:'Cerrar detalles'}).click();
+});
