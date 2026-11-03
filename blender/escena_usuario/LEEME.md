@@ -1,6 +1,6 @@
 # Habitación con los modelos proporcionados
 
-Primer montaje 3D real, visto desde la entrada. Todavía no sustituye el escenario de la aplicación.
+Versión 2: habitación ampliada a 6,6 × 7,2 m interiores y 3,05 m de altura. Cama girada 90° con cabecero en la pared izquierda, mesilla junto al cabecero y setup más separado. Cámara desde la entrada reencuadrada para mostrar la cama completa. Se ha comprobado que queda dentro del encuadre con al menos un 4,5 % de margen y que el paso entre cama y setup supera 1,2 m. Todavía no sustituye el escenario de la aplicación.
 
 ## Archivos principales
 

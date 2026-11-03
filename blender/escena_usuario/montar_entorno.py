@@ -110,44 +110,42 @@ brass=mat('Latón cepillado',(.42,.28,.11),.3,.78)
 white=mat('Rotulación marfil',(.8,.76,.64),.7)
 platinum=mat('Platino cepillado',(.52,.63,.7),.24,.85)
 glass=mat('Cristal oscuro',(.06,.105,.15),.18,.25)
-# Arquitectura completa, con apertura de ventana en la pared izquierda.
-box('Forjado',(0,0,-.12),(5.6,6.1,.20),wood)
-for row in range(15):
- for col in range(6):
-  x=-2.7+(col+.5)*.9;y=-2.9+(row+.5)*.39
+# Habitación ampliada: 6,6 x 7,2 m interiores, altura 3,05 m.
+ROOM_WIDTH=6.6;ROOM_DEPTH=7.2;ROOM_HEIGHT=3.05
+box('Forjado',(0,0,-.12),(6.9,7.5,.20),wood)
+for row in range(18):
+ for col in range(8):
+  x=-3.3+(col+.5)*.825;y=-3.6+(row+.5)*.4
   plank=mat(f'Roble parquet {row}-{col}',(.27+.025*((row+col)%4),.15+.013*((row+col)%4),.065+.008*((row+col)%4)),.48,texture='wood')
-  box('Lama de parquet',(x,y,-.012),(.895,.385,.025),plank,.003)
-box('Pared fondo',(0,3.02,1.43),(5.6,.14,2.86),wall)
-box('Pared derecha',(2.77,0,1.43),(.14,6,2.86),wall)
-box('Pared izquierda frontal',(-2.77,-1.45,1.43),(.14,2.9,2.86),wall)
-box('Pared izquierda trasera',(-2.77,2.40,1.43),(.14,1.20,2.86),wall)
-box('Bajo ventana',(-2.77,.9,.46),(.14,1.8,.92),wall)
-box('Sobre ventana',(-2.77,.9,2.59),(.14,1.8,.54),wall)
-box('Techo',(0,0,2.91),(5.6,6.1,.10),ceiling)
-# Rodapiés y molduras discretas.
-box('Rodapié fondo',(0,2.91,.055),(5.4,.05,.11),wood,.006)
-for x in [-2.66,2.66]:
- box('Rodapié lateral',(x,0,.055),(.05,5.9,.11),wood,.006)
- box('Cornisa lateral',(x,0,2.76),(.12,5.9,.08),ceiling,.01)
-box('Cornisa fondo',(0,2.88,2.76),(5.4,.12,.08),ceiling,.01)
-for x in [-2.62,2.62]:box('Marco de entrada',(x,-2.96,1.42),(.15,.15,2.84),wood,.02)
-# Ventana: apertura real, marco y cristal independiente.
-for y in [-.02,.9,1.82]:box('Montante ventana',(-2.70,y,1.62),(.12,.045,1.42),wood,.006)
-for z in [.92,2.32]:box('Travesaño ventana',(-2.70,.9,z),(.12,1.9,.06),wood,.006)
-box('Vidrio ventana',(-2.80,.9,1.62),(.012,1.8,1.35),glass,.002)
-box('Alféizar',(-2.61,.9,.92),(.36,2.0,.055),wood,.01)
-# Cortinas de malla ondulada.
-for center in [-.05,1.87]:
+  box('Lama de parquet',(x,y,-.012),(.820,.395,.025),plank,.003)
+box('Pared fondo',(0,3.67,1.525),(6.9,.14,3.05),wall)
+box('Pared derecha',(3.37,0,1.525),(.14,7.2,3.05),wall)
+box('Pared izquierda frontal',(-3.37,-1.625,1.525),(.14,3.95,3.05),wall)
+box('Pared izquierda trasera',(-3.37,2.875,1.525),(.14,1.45,3.05),wall)
+box('Bajo ventana',(-3.37,1.25,.46),(.14,1.8,.92),wall)
+box('Sobre ventana',(-3.37,1.25,2.685),(.14,1.8,.73),wall)
+box('Techo',(0,0,3.10),(6.9,7.5,.10),ceiling)
+box('Rodapié fondo',(0,3.575,.055),(6.6,.05,.11),wood,.006)
+for x in [-3.275,3.275]:
+ box('Rodapié lateral',(x,0,.055),(.05,7.2,.11),wood,.006)
+ box('Cornisa lateral',(x,0,2.95),(.12,7.2,.08),ceiling,.01)
+box('Cornisa fondo',(0,3.55,2.95),(6.6,.12,.08),ceiling,.01)
+for x in [-3.22,3.22]:box('Marco de entrada',(x,-3.56,1.525),(.15,.15,3.05),wood,.02)
+# Ventana lateral alineada con la nueva zona de descanso.
+for y in [.33,1.25,2.17]:box('Montante ventana',(-3.30,y,1.62),(.12,.045,1.42),wood,.006)
+for z in [.92,2.32]:box('Travesaño ventana',(-3.30,1.25,z),(.12,1.9,.06),wood,.006)
+box('Vidrio ventana',(-3.40,1.25,1.62),(.012,1.8,1.35),glass,.002)
+box('Alféizar',(-3.21,1.25,.92),(.36,2.0,.055),wood,.01)
+for center in [.30,2.22]:
  verts=[];faces=[]
  for k in range(2):
-  for j in range(41):verts.append((-2.52+.04*math.sin(j*.8),center-.16+j*.008, .82+k*1.65))
+  for j in range(41):verts.append((-3.12+.04*math.sin(j*.8),center-.16+j*.008, .82+k*1.65))
  for j in range(40):faces.append((j,j+1,j+42,j+41))
  data=bpy.data.meshes.new('Caída de lino');data.from_pydata(verts,[],faces);data.update();o=bpy.data.objects.new('Cortina',data);architecture.objects.link(o);o.data.materials.append(linen)
  for f in o.data.polygons:f.use_smooth=True
-# Alfombra con borde cosido.
-box('Alfombra',(0,-.65,.017),(1.7,2.5,.025),linen,.04)
-for x in [-.78,.78]:box('Borde alfombra',(x,-.65,.033),(.012,2.30,.003),duvet,.002)
-for y in [-1.78,.48]:box('Borde alfombra',(0,y,.033),(1.57,.012,.003),duvet,.002)
+box('Alfombra',(0,-.65,.017),(2.0,3.0,.025),linen,.04)
+for x in [-.93,.93]:box('Borde alfombra',(x,-.65,.033),(.012,2.80,.003),duvet,.002)
+for y in [-2.03,.73]:box('Borde alfombra',(0,y,.033),(1.87,.012,.003),duvet,.002)
 # Cama provisional: se reemplazará por el archivo del usuario.
 active=bedroom;cx=-1.73;cy=.25
 box('Base provisional',(cx,cy,.22),(1.48,2.15,.23),wood,.045)
@@ -170,13 +168,21 @@ for f in o.data.polygons:f.use_smooth=True
 mod=o.modifiers.new('Grosor textil','SOLIDIFY');mod.thickness=.02
 for x in [cx-.37,cx+.37]:
  pillow=box('Almohada provisional',(x,cy+.74,.63),(.65,.43,.15),linen,.07);pillow.rotation_euler[0]=.16
-box('Mesilla provisional',(-.68,1.20,.35),(.52,.48,.65),wood,.025)
-box('Cajón mesilla',(-.68,.948,.49),(.45,.022,.2),wood,.008)
-box('Tirador mesilla',(-.68,.925,.49),(.13,.025,.012),brass,.004)
-cylinder('Base lámpara',(-.68,1.20,.70),.11,.035,brass)
-cylinder('Pie lámpara',(-.68,1.20,.83),.018,.25,brass)
-cylinder('Pantalla lino',(-.68,1.20,1.00),.15,.22,linen)
-area('Luz mesilla',(-.67,1.15,.95),(-1.5,.5,.3),25,(1,.64,.32),.25)
+# Cabecero contra la pared izquierda; pie hacia el centro. No se deforma el modelo.
+bpy.context.view_layer.update()
+bed_parts=list(bedroom.objects)
+bed_root=bpy.data.objects.new('GRUPO / cama completa',None);bedroom.objects.link(bed_root)
+for obj in bed_parts:
+ world=obj.matrix_world.copy();obj.parent=bed_root;obj.matrix_world=world
+bed_root.matrix_world=Matrix.Translation(Vector((-2.02,.85,0)))@Matrix.Rotation(math.pi/2,4,'Z')@Matrix.Translation(Vector((-cx,-cy,0)))
+bed_root['layout_note']='Cama girada 90 grados, completamente visible desde la entrada'
+box('Mesilla provisional',(-2.90,2.05,.35),(.52,.48,.65),wood,.025)
+box('Cajón mesilla',(-2.90,1.798,.49),(.45,.022,.2),wood,.008)
+box('Tirador mesilla',(-2.90,1.775,.49),(.13,.025,.012),brass,.004)
+cylinder('Base lámpara',(-2.90,2.05,.70),.11,.035,brass)
+cylinder('Pie lámpara',(-2.90,2.05,.83),.018,.25,brass)
+cylinder('Pantalla lino',(-2.90,2.05,1.00),.15,.22,linen)
+area('Luz mesilla',(-2.89,2.00,.95),(-2.0,.85,.3),25,(1,.64,.32),.25)
 # Modelos importados. Se mantienen en colecciones independientes.
 active=library
 cupboard=load('Cupboard_01.blend',library,(2.10,.50,2.15),(0,2.62,0),-math.pi/2)
@@ -186,7 +192,7 @@ for o in cupboard:
   elif m and m.name.startswith('LED'):
    led=mat('LED cálido',(.9,.55,.2),.4);bs=led.node_tree.nodes['Principled BSDF'];bs.inputs['Emission Color'].default_value=(1,.54,.18,1);bs.inputs['Emission Strength'].default_value=2;o.data.materials[i]=led
 # Setup completo: conserva los materiales y texturas recibidos.
-setup=load('Gaming setup Pro/gaming_setup.blend',gaming,(1.95,2.15,1.62),(1.55,1.44,0),math.pi)
+setup=load('Gaming setup Pro/gaming_setup.blend',gaming,(1.95,2.15,1.62),(2.12,1.85,0),math.pi)
 # Materiales de imagen ausentes -> neutro, sin magenta de error.
 missing_images=[]
 for material in bpy.data.materials:
@@ -207,14 +213,14 @@ for m in bpy.data.materials:
 # Balda para colección opcional, a la derecha sobre el setup.
 active=architecture
 for z in [2.00,2.43]:
- box('Balda colección',(2.53,1.37,z),(.28,1.70,.045),wood,.014)
- for y in [.75,1.98]:box('Escuadra balda',(2.58,y,z-.07),(.16,.028,.12),brass,.009)
+ box('Balda colección',(3.13,1.75,z),(.28,1.70,.045),wood,.014)
+ for y in [1.13,2.36]:box('Escuadra balda',(3.18,y,z-.07),(.16,.028,.12),brass,.009)
 # Figuras recibidas: independientes y ocultas al abrir, como el inventario vacío de la app.
-duck=load('FBX/RubberDuck_LOD0.fbx',decor,.19,(2.51,.95,2.03),-math.pi/2)
+duck=load('FBX/RubberDuck_LOD0.fbx',decor,.19,(3.11,1.33,2.03),-math.pi/2)
 yellow=mat('Patito — amarillo sin textura recibida',(.95,.58,.035),.4)
 for obj in duck:
  obj.data.materials.clear();obj.data.materials.append(yellow)
-figure=load('Dumbledore+funko+pop+stl.stl',decor,.28,(2.51,1.72,2.03),-math.pi/2)
+figure=load('Dumbledore+funko+pop+stl.stl',decor,.28,(3.11,2.10,2.03),-math.pi/2)
 ivory=mat('Figura STL — resina marfil',(.67,.63,.52),.56)
 for obj in figure:
  obj.data.materials.clear();obj.data.materials.append(ivory)
@@ -236,33 +242,41 @@ for row,z in enumerate([.294,.902]):
   box('Banda PC',(x,2.412,z+.30),(.064,.004,.033),black,.001)
   t=text('Título / '+titles[index],titles[index],(x-.006,2.408,z+.16),.0125,white,spine_rotation)
   t.data.align_x='CENTER'
+# Biblioteca como grupo: dimensiones mayores y 60 cm más al fondo.
+bpy.context.view_layer.update()
+library_root=bpy.data.objects.new('GRUPO / biblioteca completa',None);library.objects.link(library_root)
+for coll in [library,books,awards]:
+ for obj in list(coll.objects):
+  if obj==library_root:continue
+  world=obj.matrix_world.copy();obj.parent=library_root;obj.matrix_world=world
+library_root.matrix_world=Matrix.Translation(Vector((.20,3.22,0)))@Matrix.Diagonal((1.1,1.0,1.08,1.0))@Matrix.Translation(Vector((0,-2.62,0)))
 # Rotulación discreta independiente del mueble.
 active=architecture
-text('Rótulo superior','T U S   M U N D O S',(0,2.915,2.46),.075,white)
-text('Placa platinos','P L A T I N O S',(0,2.347,1.515),.018,brass)
+text('Rótulo superior','T U S   M U N D O S',(.20,3.56,2.65),.075,white)
+text('Placa platinos','P L A T I N O S',(.20,2.947,1.6362),.018,brass)
 # Un cuadro minimalista frente a la cama.
-box('Marco lámina',(-1.75,2.907,1.95),(.67,.045,.83),wood,.01)
+box('Marco lámina',(-1.85,3.567,2.05),(.67,.045,.83),wood,.01)
 art=mat('Lámina verde',(.17,.27,.24),.9)
-box('Lámina',(-1.75,2.878,1.95),(.59,.012,.75),art,.001)
-text('Lámina / titulo','PAUSE',(-1.75,2.866,1.97),.07,linen)
-text('Lámina / detalle','TAKE YOUR TIME',(-1.75,2.865,1.82),.021,linen)
+box('Lámina',(-1.85,3.538,2.05),(.59,.012,.75),art,.001)
+text('Lámina / titulo','PAUSE',(-1.85,3.526,2.07),.07,linen)
+text('Lámina / detalle','TAKE YOUR TIME',(-1.85,3.525,1.92),.021,linen)
 # Luminaria principal y luz suave de atardecer.
 active=architecture
-cylinder('Plafón',(0,-.1,2.70),.28,.12,linen)
-area('Principal suave',(0,-.10,2.58),(0,.5,0),160,(1,.84,.64),2.0)
-area('Ventana atardecer',(-2.52,.9,1.73),(-.2,.6,.5),140,(.55,.68,1),1.3,'RECTANGLE',1.5)
-area('Rebote entrada',(0,-2.95,2.1),(0,1,1),70,(1,.84,.67),3.0)
-area('Luz balda alta',(0,2.37,2.04),(0,2.45,1.55),14,(1,.65,.3),1.5,'RECTANGLE',.07)
-area('Monitor violeta',(2.0,1.4,1.15),(1.1,1.0,.5),18,(.43,.39,1),.65)
+cylinder('Plafón',(0,-.1,2.92),.28,.12,linen)
+area('Principal suave',(0,-.10,2.82),(0,.5,0),230,(1,.84,.64),2.5)
+area('Ventana atardecer',(-3.12,1.25,1.73),(-.5,.8,.5),140,(.55,.68,1),1.3,'RECTANGLE',1.5)
+area('Rebote entrada',(0,-3.55,2.3),(0,1,1),110,(1,.84,.67),3.5)
+area('Luz balda alta',(.20,2.97,2.20),(.20,3.05,1.67),14,(1,.65,.3),1.5,'RECTANGLE',.07)
+area('Monitor violeta',(2.57,1.81,1.15),(1.67,1.41,.5),18,(.43,.39,1),.65)
 # LED de cornisa: piezas separadas, no pintadas en una imagen.
 emissive=mat('LED de ambiente',(.8,.43,.12),.3)
 led_bs=emissive.node_tree.nodes['Principled BSDF'];led_bs.inputs['Emission Color'].default_value=(1,.46,.13,1);led_bs.inputs['Emission Strength'].default_value=3
-for x in [-2.59,2.59]:
- box('Tira LED de cornisa',(x,0,2.735),(.012,5.8,.014),emissive,.002)
- area('Rebote LED lateral',(x,0,2.72),(x*.99,0,2.3),10,(1,.53,.23),4.5,'RECTANGLE',.05)
-box('Tira LED fondo',(0,2.80,2.735),(5.2,.012,.014),emissive,.002)
+for x in [-3.20,3.20]:
+ box('Tira LED de cornisa',(x,0,2.925),(.012,7.0,.014),emissive,.002)
+ area('Rebote LED lateral',(x,0,2.91),(x*.99,0,2.5),10,(1,.53,.23),5.5,'RECTANGLE',.05)
+box('Tira LED fondo',(0,3.47,2.925),(6.4,.012,.014),emissive,.002)
 # Cámara conserva la perspectiva desde la entrada; lente arquitectónica sin ojo de pez.
-data=bpy.data.cameras.new('Desde la puerta');cam=bpy.data.objects.new('CAMARA / entrada',data);architecture.objects.link(cam);cam.location=(.05,-3.22,1.53);aim(cam,(0,.75,1.32));data.lens=24;data.sensor_width=36;data.clip_start=.05;data.clip_end=100;scene.camera=cam
+data=bpy.data.cameras.new('Desde la puerta');cam=bpy.data.objects.new('CAMARA / entrada',data);architecture.objects.link(cam);cam.location=(0,-4.75,1.80);aim(cam,(.10,1.0,1.18));data.lens=24;data.sensor_width=36;data.clip_start=.05;data.clip_end=100;scene.camera=cam
 scene.world=bpy.data.worlds.new('Cielo nocturno');scene.world.use_nodes=True;scene.world.node_tree.nodes['Background'].inputs[0].default_value=(.08,.11,.17,1);scene.world.node_tree.nodes['Background'].inputs[1].default_value=.18
 scene.render.engine=opt.engine;scene.cycles.samples=96;scene.cycles.use_denoising=False;scene.cycles.max_bounces=7;scene.cycles.diffuse_bounces=4;scene.cycles.glossy_bounces=4
 scene.render.resolution_x=1280;scene.render.resolution_y=854;scene.render.resolution_percentage=100
@@ -282,9 +296,23 @@ for screen in bpy.data.screens:
  for a in screen.areas:
   if a.type=='VIEW_3D':a.spaces.active.region_3d.view_perspective='CAMERA';a.spaces.active.overlay.show_overlays=False;a.spaces.active.shading.type='MATERIAL'
 scene['launcher_note']='Cama provisional. Texturas ausentes del armario/patito sustituidas. Figuras opcionales ocultas. Trofeos ilustrativos.'
+# Verifica el encuadre real: toda la cama dentro de la imagen con margen.
+from bpy_extras.object_utils import world_to_camera_view
+bpy.context.view_layer.update()
+bed_points=[obj.matrix_world@Vector(v) for obj in bed_parts for v in obj.bound_box]
+projected=[world_to_camera_view(scene,cam,v) for v in bed_points]
+bed_frame=[[min(v[i] for v in projected),max(v[i] for v in projected)] for i in range(2)]
+assert all(v.z>0 for v in projected), 'Cama detrás de la cámara'
+assert all(.045<=v.x<=.955 and .045<=v.y<=.955 for v in projected), ('Cama recortada',bed_frame)
+# Espacio libre entre el pie de la cama y el conjunto de escritorio/silla.
+setup_points=[obj.matrix_world@Vector(v) for obj in setup for v in obj.bound_box]
+passage=min(v.x for v in setup_points)-max(v.x for v in bed_points)
+assert passage>=1.2, ('Paso central insuficiente',passage)
+assert min(v.x for v in bed_points)>-ROOM_WIDTH/2
+print('LAYOUT_VALIDATED bed_frame=',bed_frame,'passage_meters=',passage)
 bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'habitacion-modelos-usuario.blend'))
-(OUT/'informe.json').write_text(json.dumps({'sources':required,'missing_images_replaced':sorted(set(missing_images)),'bed':'provisional, upload exceeded 32 MiB','optional_figures_hidden':True,'blender_version':bpy.app.version_string,'camera':'doorway','games':50},indent=2,ensure_ascii=False))
+(OUT/'informe.json').write_text(json.dumps({'sources':required,'missing_images_replaced':sorted(set(missing_images)),'bed':'provisional, upload exceeded 32 MiB','optional_figures_hidden':True,'blender_version':bpy.app.version_string,'camera':'doorway','games':50,'room_meters':[ROOM_WIDTH,ROOM_DEPTH,ROOM_HEIGHT],'bed_rotated_degrees':90,'bed_frame_normalized':bed_frame,'passage_meters':passage},indent=2,ensure_ascii=False))
 if opt.preview:
- scene.render.resolution_x=960;scene.render.resolution_y=640;scene.cycles.samples=24
+ scene.render.resolution_x=960;scene.render.resolution_y=640;scene.cycles.samples=24;scene.eevee.taa_render_samples=32
 bpy.ops.render.render(write_still=True)
 print('ROOM_RENDER_COMPLETE',str(OUT))
