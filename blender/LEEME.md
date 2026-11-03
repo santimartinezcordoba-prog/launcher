@@ -1,6 +1,6 @@
 # Modelos independientes para Blender
 
-Scripts para Blender 4.x y 5.x, en metros. Cada archivo es independiente y contiene sus materiales y herramientas: puedes compartirlo o abrirlo sin instalar complementos. Son modelos iniciales editables, no assets finales de calidad fotográfica.
+Scripts probados en Blender 4.3.2, con ajustes de rutas y emisión para Blender 3.0 (aún sin prueba completa en esa versión). Compatibles como objetivo con Blender 3.x, 4.x y 5.x, en metros. Cada archivo es independiente y contiene sus materiales y herramientas: puedes compartirlo o abrirlo sin instalar complementos. Son modelos iniciales editables, no assets finales de calidad fotográfica.
 
 ## Cómo usarlos
 

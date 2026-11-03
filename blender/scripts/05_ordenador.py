@@ -71,7 +71,10 @@ box('Pie monitor',(0,.05,.19),(.045,.045,.34),metal)
 box('Marco monitor',(0,.05,.43),(.66,.045,.40),metal,.015)
 screen=material('Pantalla violeta',(.12,.08,.27),.3)
 bs=screen.node_tree.nodes.get('Principled BSDF')
-bs.inputs['Emission Color'].default_value=(.18,.10,.4,1);bs.inputs['Emission Strength'].default_value=.5
+emission = bs.inputs.get('Emission Color') or bs.inputs.get('Emission')
+if emission is not None: emission.default_value=(.18,.10,.4,1)
+strength = bs.inputs.get('Emission Strength')
+if strength is not None: strength.default_value=.5
 box('Pantalla',(0,.024,.43),(.62,.008,.35),screen,.006)
 box('Teclado',(0,-.24,.025),(.44,.15,.035),metal,.01)
 keys=material('Teclas',(.22,.22,.25),.6)
