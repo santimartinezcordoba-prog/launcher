@@ -44,7 +44,7 @@ El escenario utiliza una imagen conceptual generada y capas interactivas con ace
 
 Todos los juegos, tiempos, estados de instalación y requisitos son datos de demostración, no una lectura del ordenador o de las cuentas del usuario. Las portadas tipográficas son provisionales. Jugar y Descargar muestran un aviso; no ejecutan procesos ni descargan juegos. Los requisitos deben consultarse en fuentes oficiales antes de utilizarlos como información real.
 
-Las integraciones con Steam, Epic, Ubisoft, Xbox/Game Pass, EA, Battle.net, Riot y GOG son futuras. Consultar bibliotecas completas requiere estudiar los métodos y permisos de cada plataforma. Figuritas desbloqueables, misiones y pagos tampoco están implementados. No se solicitan credenciales ni se realizan cobros.
+Las integraciones con Steam, Epic, Ubisoft, Xbox/Game Pass, EA, Battle.net, Riot y GOG son futuras. Consultar bibliotecas completas requiere estudiar los métodos y permisos de cada plataforma. La tienda local y las misiones de demostración permiten conseguir puntos, comprar tres objetos y colocarlos o retirarlos desde el inventario. No se solicitan credenciales ni se realizan cobros. Los puntos se conservan solo en este navegador y no tienen valor monetario. La recarga con dinero aún no está implementada.
 
 ## Próximas etapas
 
@@ -52,3 +52,11 @@ Las integraciones con Steam, Epic, Ubisoft, Xbox/Game Pass, EA, Battle.net, Riot
 2. Sustituir el escenario por geometría y materiales 3D si se necesita movimiento de cámara libre y decoración independiente.
 3. Incorporar detección local y apertura de juegos, empezando por Steam.
 4. Añadir metadatos verificados, bibliotecas remotas y otras tiendas por etapas.
+
+## Colecciones y trofeos
+
+El escenario inicial está libre de peluches y figuritas. Desde el ordenador puedes abrir Tienda, Misiones, Inventario y Comprar puntos. Las misiones se completan al explorar la estantería, consultar tres juegos distintos y cambiar el ambiente. Cada recompensa se reclama una sola vez. Las compras descuentan puntos y los objetos adquiridos se pueden colocar o guardar. Las futuras recargas requerirán backend, cuentas y un proveedor de pagos; no se simulan pagos exitosos.
+
+La estantería superior abre la colección de platinos. Las fichas incluyen progreso y una lista de trofeos. Son datos ilustrativos explícitos, no logros importados; el platino de la app representa completar todos los logros y no implica un trofeo oficial de Steam, Xbox u otra tienda.
+
+El fondo sigue siendo una imagen; los objetos comprados y los trofeos son capas independientes. Eliminar la sensación de imagen plana por completo requiere migrar la habitación a geometría 3D, tarea aún pendiente.
