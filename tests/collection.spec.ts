@@ -19,20 +19,21 @@ test('misión, compra sin duplicados, inventario y persistencia',async({page})=>
  await page.getByRole('button',{name:'Inventario',exact:true}).click();
  await page.getByRole('button',{name:'Colocar en habitación'}).click();
  await page.keyboard.press('Escape');
- await expect(page.locator('.placed-cat')).toHaveCount(1);
+ await expect(page.getByTestId('room-3d')).toHaveAttribute('data-placed','cat');
  await page.reload();
- await expect(page.locator('.placed-cat')).toHaveCount(1);
+ await expect(page.getByTestId('room-3d')).toHaveAttribute('data-placed','cat');
  await page.getByRole('button',{name:'Ajustes',exact:true}).click();
  await expect(page.getByTestId('points')).toHaveText('0');
  await page.getByRole('button',{name:'Inventario',exact:true}).click();
  await page.getByRole('button',{name:'Guardar en inventario'}).click();
- await expect(page.locator('.placed-cat')).toHaveCount(0);
+ await expect(page.getByTestId('room-3d')).toHaveAttribute('data-placed','');
  await page.getByRole('button',{name:'Comprar puntos',exact:true}).click();
  await expect(page.getByRole('dialog')).toContainText('No hay cobros ni pagos activos');
 });
 test('estantería de platinos enlaza con trofeos de la ficha',async({page})=>{
  await page.goto('/');
- await expect(page.locator('.placed')).toHaveCount(0);
+ await expect(page.getByTestId('room-3d')).toHaveAttribute('data-state','ready');
+ await expect(page.getByTestId('room-3d')).toHaveAttribute('data-placed','');
  await page.getByRole('button',{name:'Ver estantería de platinos'}).click();
  await expect(page.getByRole('dialog',{name:'Estantería de platinos'})).toBeVisible();
  await page.getByLabel('Buscar platinos').fill('Hollow');

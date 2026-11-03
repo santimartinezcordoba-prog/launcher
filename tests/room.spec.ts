@@ -4,9 +4,11 @@ test('habitación: 50 lomos, acercamiento, ficha y vuelta con Escape', async ({p
   const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
   await page.goto('/');
   await expect(page.getByRole('heading',{name:/Todos tus mundos/})).toBeVisible();
-  await expect(page.locator('.case')).toHaveCount(50);
+  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-state','ready');
+  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-slots','50');
   await page.getByRole('button',{name:'Acercarse a la estantería'}).click();
   await expect(page.getByRole('heading',{name:'Historias por vivir.'})).toBeVisible();
+  await expect(page.locator('.case')).toHaveCount(50);
   await page.locator('.case').first().click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page.getByRole('heading',{name:'Requisitos mínimos',exact:false})).toBeVisible();
@@ -14,6 +16,8 @@ test('habitación: 50 lomos, acercamiento, ficha y vuelta con Escape', async ({p
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.keyboard.press('Escape');
   await expect(page.getByRole('heading',{name:/Todos tus mundos/})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Acercarse a la estantería'})).toBeVisible();
+  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-motion','idle');
   await page.mouse.move(10, 450);
   await page.locator('.scene').evaluate(async el=>{await Promise.all(el.getAnimations().map(a=>a.finished.catch(()=>{})));});
   await page.screenshot({path:'test-results/room.png'});
@@ -41,7 +45,8 @@ test('favoritos persisten y se fijan en la estantería',async({page})=>{
   await expect(page.locator('.game-card')).toHaveCount(5);
   await expect(page.getByRole('button',{name:'Quitar de favoritos: Unpacking'})).toHaveAttribute('aria-pressed','true');
   await page.getByRole('button',{name:'Volver a mi habitación'}).click();
-  await expect(page.locator('.case[aria-label="Ver Unpacking"]')).toHaveCount(1);
+  await page.getByRole('button',{name:'Acercarse a la estantería'}).click();
+  await expect(page.locator('.case[aria-label="Ver Unpacking"]')).toBeVisible();
 });
 test('juego sin instalar muestra Descargar y explica el estado de demostración',async({page})=>{
   await page.goto('/');
@@ -65,11 +70,11 @@ test('ordenador, opciones de accesibilidad y personalización se conservan',asyn
   await page.reload();
   await expect(page.locator('main')).toHaveClass(/mood-night/);
   await expect(page.locator('main')).toHaveClass(/reduce-motion/);
-  await expect(page.locator('.wall-tint')).toHaveCSS('background-color','rgb(74, 99, 125)');
-  await expect(page.locator('.bed-tint')).toHaveCSS('background-color','rgb(152, 90, 104)');
+  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-wall','#4a637d');
+  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-bedding','#985a68');
   await page.getByRole('button',{name:'Personalizar',exact:true}).click();
   await page.getByRole('button',{name:'Restaurar habitación original'}).click();
-  await expect(page.locator('.wall-tint')).toHaveCount(0);
+  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-wall','original');
 });
 test('ventana compacta: biblioteca y diálogo utilizables',async({page})=>{
   await page.setViewportSize({width:1024,height:650});

@@ -1,6 +1,6 @@
 # Mi habitación
 
-Primera demo visual de un launcher para Windows: tu biblioteca de juegos en una habitación acogedora vista desde la puerta.
+Prototipo de launcher para Windows con una habitación **3D real** construida en Blender a partir de los modelos proporcionados. La cámara parte de la entrada y se acerca a la biblioteca. El escenario utiliza `public/models/room.glb`; la antigua imagen `public/room.png` se conserva únicamente como referencia.
 
 ## Desarrollo
 
@@ -11,7 +11,27 @@ npm ci
 npm run dev
 ```
 
-El servidor de desarrollo utiliza el puerto 5173. `npm run build` comprueba los tipos y crea la aplicación en `dist/`. `npm run preview` permite comprobar esa compilación.
+Abre la dirección que indique Vite, normalmente en el puerto 5173. Deja la terminal abierta. El navegador necesita WebGL 2 y aceleración gráfica. La primera apertura carga aproximadamente 13 MB de geometría y texturas del modelo local.
+
+```sh
+npm run build
+npm run preview
+```
+
+La compilación comprueba TypeScript y crea `dist/`, incluyendo los modelos. Ningún modelo se descarga de una web externa durante el uso de la aplicación.
+
+## Qué puedes probar
+
+- Pulsar el ordenador o cualquier parte del setup para abrir ajustes, tienda, misiones e inventario.
+- Acercarte a la estantería y seleccionar cualquiera de los 50 juegos. Los favoritos tienen prioridad; los huecos restantes se ordenan por horas de juego de ejemplo. Los lomos y estrellas se actualizan sobre las cajas 3D.
+- Abrir la colección de platinos desde los trofeos del armario. Las fichas incluyen progreso y logros.
+- Volver con Escape: ficha → estantería → entrada. Ctrl+K abre el buscador.
+- Buscar entre 60 juegos de ejemplo y filtrar por tienda, género, instalación o favoritos.
+- Completar misiones, reclamar sus puntos una sola vez, comprar objetos y colocarlos o guardarlos. El patito y la figura del mago utilizan tus GLB importados. El gato, cristal y robot son modelos 3D provisionales creados por la aplicación.
+- Cambiar ambiente, color de paredes y ropa de cama. Los cambios afectan a materiales e iluminación 3D. Las preferencias, el inventario y los favoritos se guardan localmente en el navegador.
+- Reducir las animaciones. Las interacciones sobre los modelos también tienen botones accesibles mediante teclado.
+
+Si el modelo o WebGL fallan, se ofrece reintentar y se mantiene disponible la biblioteca. No se utiliza una imagen para simular que el 3D ha cargado.
 
 ## Ventana de escritorio en Windows
 
@@ -20,7 +40,7 @@ npm ci
 npm run desktop
 ```
 
-Abre una ventana Electron con la compilación local, sin servidor de desarrollo. La integración de Node está desactivada en la interfaz y la ventana utiliza aislamiento de contexto y sandbox. Todavía no hay instalador ni integraciones nativas con las tiendas. La ventana de Windows no se ha validado desde el entorno Linux de desarrollo.
+Electron compila y abre la aplicación sin servidor Vite. Sirve exclusivamente los archivos de `dist/` mediante el protocolo local `room://launcher`, que permite cargar los GLB conservando la seguridad del navegador. La interfaz tiene Node desactivado, aislamiento de contexto y sandbox; las ventanas externas y los permisos están bloqueados. La ventana de Windows todavía necesita validación en Windows; las comprobaciones de navegador se realizan en Linux. No hay instalador aún.
 
 ## Pruebas
 
@@ -29,34 +49,20 @@ npx playwright install chromium
 npm test
 ```
 
-En el entorno de nube se reutiliza `/usr/bin/chromium` si está disponible. Las pruebas verifican navegación, 50 juegos en la estantería, búsqueda y filtros, favoritos persistentes, personalización, fichas y estados de la demo.
+En la nube se reutiliza `/usr/bin/chromium` si existe, con SwiftShader para probar WebGL sin GPU física. Las pruebas requieren modelos 3D reales y verifican render, cámara, selección mediante raycasting, biblioteca, persistencia, compras, carga de una figura importada y recuperación tras una descarga GLB fallida. Los resultados no equivalen a una validación de rendimiento con la GPU del usuario.
 
-## Qué puedes probar
+## Escena y materiales
 
-- Acercarte a la estantería y seleccionar cualquiera de sus 50 lomos. Escape vuelve de la ficha a la estantería y de la estantería a la habitación.
-- Buscar entre 60 juegos de ejemplo, filtrar por instalación, favoritos, tienda o género y ordenar los resultados. Ctrl+K abre el buscador.
-- Fijar favoritos, que tienen prioridad en la estantería; los huecos restantes se rellenan según las horas de juego de muestra.
-- Abrir los ajustes desde el ordenador y cambiar el ambiente, el color de paredes y ropa de cama, además de reducir animaciones. Las preferencias y favoritos se guardan localmente.
+La distribución aprobada mide 6,6 × 7,2 m y tiene la cama girada junto a la pared izquierda. El setup, armario y copas proceden de los archivos recibidos. La cama continúa siendo provisional porque el ZIP original superaba el límite de transferencia. Los materiales del ordenador y los trofeos quedan pendientes de una pasada visual posterior; la iluminación WebGL puede diferir del render de Blender.
 
-## Alcance de la demo
+La escena se renderiza bajo demanda: vuelve a dibujar al mover la cámara, cambiar materiales, colocar objetos o redimensionar la ventana. Se limita la densidad de píxeles y se agrupan las lamas del suelo para reducir llamadas de dibujo. Las transiciones respetan la preferencia de accesibilidad.
 
-El escenario utiliza una imagen conceptual generada y capas interactivas con acercamiento. **No es una escena 3D navegable**; los cambios de color utilizan máscaras aproximadas sobre la imagen. La referencia visual aprobada se conserva en `public/room.png`.
+`blender/entorno-modelos-usuario.zip` contiene la escena editable y el script de montaje. La versión web añade interacciones, lomos y personalización en `src/room3d.tsx`; editar Blender por sí solo no modifica las funciones del launcher.
 
-Todos los juegos, tiempos, estados de instalación y requisitos son datos de demostración, no una lectura del ordenador o de las cuentas del usuario. Las portadas tipográficas son provisionales. Jugar y Descargar muestran un aviso; no ejecutan procesos ni descargan juegos. Los requisitos deben consultarse en fuentes oficiales antes de utilizarlos como información real.
+## Alcance de los datos
 
-Las integraciones con Steam, Epic, Ubisoft, Xbox/Game Pass, EA, Battle.net, Riot y GOG son futuras. Consultar bibliotecas completas requiere estudiar los métodos y permisos de cada plataforma. La tienda local y las misiones de demostración permiten conseguir puntos, comprar tres objetos y colocarlos o retirarlos desde el inventario. No se solicitan credenciales ni se realizan cobros. Los puntos se conservan solo en este navegador y no tienen valor monetario. La recarga con dinero aún no está implementada.
+Los juegos, las horas, la instalación, los requisitos y los trofeos son **datos de demostración**, no una lectura del ordenador o las cuentas. Las portadas son provisionales. Jugar y Descargar muestran un aviso; no ejecutan procesos ni descargan juegos. Verifica los requisitos en la fuente oficial antes de utilizarlos como información real.
 
-## Próximas etapas
+Steam, Epic, Ubisoft, Xbox/Game Pass, EA, Battle.net, Riot y GOG aún no están conectados. El platino es una distinción de esta aplicación al completar su lista de ejemplo, no un trofeo oficial sincronizado.
 
-1. Validar visuales y navegación en Windows.
-2. Sustituir el escenario por geometría y materiales 3D si se necesita movimiento de cámara libre y decoración independiente.
-3. Incorporar detección local y apertura de juegos, empezando por Steam.
-4. Añadir metadatos verificados, bibliotecas remotas y otras tiendas por etapas.
-
-## Colecciones y trofeos
-
-El escenario inicial está libre de peluches y figuritas. Desde el ordenador puedes abrir Tienda, Misiones, Inventario y Comprar puntos. Las misiones se completan al explorar la estantería, consultar tres juegos distintos y cambiar el ambiente. Cada recompensa se reclama una sola vez. Las compras descuentan puntos y los objetos adquiridos se pueden colocar o guardar. Las futuras recargas requerirán backend, cuentas y un proveedor de pagos; no se simulan pagos exitosos.
-
-La estantería superior abre la colección de platinos. Las fichas incluyen progreso y una lista de trofeos. Son datos ilustrativos explícitos, no logros importados; el platino de la app representa completar todos los logros y no implica un trofeo oficial de Steam, Xbox u otra tienda.
-
-El fondo sigue siendo una imagen; los objetos comprados y los trofeos son capas independientes. Eliminar la sensación de imagen plana por completo requiere migrar la habitación a geometría 3D, tarea aún pendiente.
+Los puntos son locales y no tienen valor monetario. Comprar puntos con dinero no está habilitado, no se solicitan credenciales y no se realizan cobros. El backend de cuentas, las integraciones de tiendas, la detección y apertura de juegos y los pagos reales son etapas futuras.
