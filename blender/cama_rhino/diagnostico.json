@@ -1,0 +1,50 @@
+{
+  "units": "UnitSystem.Inches",
+  "object_types": {
+    "Brep": 5,
+    "SubD": 4,
+    "PolylineCurve": 5,
+    "Extrusion": 10,
+    "Mesh": 5
+  },
+  "textures_recovered": [
+    {
+      "name": "Wood049_1K_Colorblack ab22as.jpg",
+      "bytes": 774836
+    },
+    {
+      "name": "FABRIC  CREASE - Copy111.jpg",
+      "bytes": 107171
+    },
+    {
+      "name": "RAFFIA.jpg",
+      "bytes": 1981732
+    },
+    {
+      "name": "X.jpg",
+      "bytes": 804028
+    },
+    {
+      "name": "FABRIC  CREASE.jpg",
+      "bytes": 286094
+    },
+    {
+      "name": "CLASSIC WHITE PERFORMANCE LINEN.jpg",
+      "bytes": 5793024
+    },
+    {
+      "name": "SHERPA OR BOUCLE WHITE2.jpg",
+      "bytes": 1437207
+    },
+    {
+      "name": "FABRIC - Copy_$3dm$Embedded$_E0E4D8A1 - Copy.jpg",
+      "bytes": 483382
+    },
+    {
+      "name": "Texture 3.jpeg",
+      "bytes": 3085289
+    }
+  ],
+  "conversion_status": "blocked_complete_mesh_export_required",
+  "details": "10 extrusions and 5 Breps have no cached render mesh. rhino3dm reads these surfaces but does not provide their tessellation. 4 SubD objects provide a control net, not a finished render mesh. No replacement of the provisional bed was performed."
+}
