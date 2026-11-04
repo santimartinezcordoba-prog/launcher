@@ -18,6 +18,7 @@ test('los clics sobre las mallas abren ordenador y trofeos, y la cámara vuelve 
   for(const offset of [50,60,70,80,90]){
     const y=trophyTag.y+trophyTag.height/2+offset;
     await canvas.dispatchEvent('pointermove',{clientX:trophyX,clientY:y});
+    await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>resolve())));
     if(await room.getAttribute('data-highlight')==='trophies'){trophyY=y;break;}
   }
   expect(trophyY).toBeGreaterThan(0);
@@ -65,4 +66,34 @@ test('si falla el GLB, la biblioteca sigue disponible y permite reintentar',asyn
   await page.getByRole('button',{name:'Reintentar',exact:true}).click();
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-rendered','true');
   await expect(page.getByRole('button',{name:'Acercarse a la estantería'})).toBeVisible();
+});
+
+
+test('el contorno de juegos cambia sin volver a renderizar la habitación',async({page})=>{
+  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('/');const room=page.getByTestId('room-3d');
+  await expect(room).toHaveAttribute('data-rendered','true');
+  await page.getByRole('button',{name:'Acercarse a la estantería'}).press('Enter');
+  await expect(page.locator('.three-game-hit').first()).toBeVisible();
+  await expect(room).toHaveAttribute('data-motion','idle');
+  const result=await page.evaluate(async()=>{
+    const host=document.querySelector('[data-testid="room-3d"]')!;
+    const canvas=host.querySelector('canvas')!;
+    const outline=host.querySelector('polygon')!;
+    const buttons=[...document.querySelectorAll('[data-slot]')].slice(0,12);
+    const frames=host.getAttribute('data-frame');const shapes=new Set<string>();let maxHandlerMs=0;
+    for(const button of buttons){
+      const b=button.getBoundingClientRect();
+      // A burst of events is coalesced; the latest position wins within the next animation frame.
+      for(let n=0;n<8;n++)canvas.dispatchEvent(new PointerEvent('pointermove',{clientX:b.x+b.width/2,clientY:b.y+b.height/2}));
+      await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
+      shapes.add(outline.getAttribute('points')??'');maxHandlerMs=Math.max(maxHandlerMs,Number(host.getAttribute('data-hover-ms')));
+    }
+    const after=host.getAttribute('data-frame');
+    canvas.dispatchEvent(new PointerEvent('pointerleave'));
+    return {frames,after,shapes:shapes.size,maxHandlerMs,hidden:(host.querySelector('svg') as SVGElement).style.display};
+  });
+  expect(result.shapes).toBe(12);expect(result.after).toBe(result.frames);
+  expect(result.maxHandlerMs).toBeLessThan(16);expect(result.hidden).toBe('none');
+  expect(errors).toEqual([]);
 });

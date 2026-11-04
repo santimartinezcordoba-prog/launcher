@@ -96,6 +96,12 @@ class RoomEngine {
   decorations = new Map<string,THREE.Group>();
   highlightKey='';
   outline?:OutlinePass;
+  highlightOverlay=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  highlightPath=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+  highlightBounds?:THREE.Box3;
+  hoverTargets:{hit:Hit;bounds:THREE.Box3}[]=[];
+  outlineTargets=new Map<Kind,THREE.Mesh[]>();
+  pendingPointer?:{clientX:number;clientY:number};
   disposed=false; dirty=true; ready=false; frame=0; renderedFrames=0; transitionStart=0;
   startPosition=new THREE.Vector3();startQuaternion=new THREE.Quaternion();
   stateKey=''; decorationKey=''; currentView='';
@@ -118,6 +124,8 @@ class RoomEngine {
     this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.autoUpdate=false;this.renderer.shadowMap.needsUpdate=true;this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;
     this.renderer.domElement.setAttribute('aria-label','Habitación 3D interactiva');
     this.host.appendChild(this.renderer.domElement);
+    this.highlightOverlay.classList.add('interaction-outline');this.highlightOverlay.setAttribute('aria-hidden','true');
+    this.highlightOverlay.appendChild(this.highlightPath);this.host.appendChild(this.highlightOverlay);
     this.scene.background=new THREE.Color('#191d21');
     const generator=new THREE.PMREMGenerator(this.renderer);const studio=new RoomEnvironment();
     this.environment=generator.fromScene(studio,.04).texture;this.scene.environment=this.environment;studio.dispose();generator.dispose();
@@ -182,6 +190,7 @@ class RoomEngine {
         this.slots.forEach((slot,i)=>{const d=slot.bounds.getCenter(new THREE.Vector3()).distanceToSquared(center);if(d<distance){distance=d;best=i;}});
         node.userData.hit={kind:'game',slot:best};
       });
+      this.cacheInteractionTargets();
       this.mergeFloor();
       const floatingPoint=this.renderer.extensions.has('EXT_color_buffer_float');
       const target=new THREE.WebGLRenderTarget(1,1,{type:floatingPoint?THREE.HalfFloatType:THREE.UnsignedByteType});
@@ -283,20 +292,72 @@ class RoomEngine {
     const spot=placementSpots.find(s=>s.id===p.placements[id])??placementSpots[Math.max(0,index)];
     object.position.set(...spot.position);object.rotation.y=(object.userData.baseRotation??0)+(p.rotations[id]??0)*Math.PI/180;
   }
+  cacheInteractionTargets(){
+    // Cache world bounds once, rather than tracing the imported high-poly furniture on every move.
+    const grouped=new Map<Kind,THREE.Box3>();
+    this.scene.traverse(node=>{
+      if(!(node instanceof THREE.Mesh)||!node.visible)return;
+      let current:THREE.Object3D|null=node,hit:Hit|undefined;
+      while(current){if(current.userData.hit)hit=current.userData.hit as Hit;current=current.parent;}
+      if(!hit||hit.kind==='game')return;
+      const meshes=this.outlineTargets.get(hit.kind)??[];meshes.push(node);this.outlineTargets.set(hit.kind,meshes);
+      const box=new THREE.Box3().setFromObject(node);
+      if(hit.kind==='trophies')this.hoverTargets.push({hit,bounds:box});
+      else {const bounds=grouped.get(hit.kind)??new THREE.Box3();bounds.union(box);grouped.set(hit.kind,bounds);}
+    });
+    for(const [kind,bounds] of grouped)this.hoverTargets.push({hit:{kind},bounds});
+  }
   setHighlight(hit?:Hit){
     const kind=hit?.kind==='game'&&this.read().view==='room'?'shelf':hit?.kind;
     const key=kind?kind+(kind==='game'?hit?.slot:''):'';if(key===this.highlightKey)return;
-    const selected:THREE.Object3D[]=[];
     this.highlightKey=key;this.host.dataset.highlight=kind??'';
-    if(kind)this.scene.traverse(node=>{
-      if(!(node instanceof THREE.Mesh)||!node.visible)return;
-      let current:THREE.Object3D|null=node,match=false;
-      while(current){const h=current.userData.hit as Hit|undefined;if(h&&(h.kind===kind||(kind==='shelf'&&h.kind==='game'))&&(kind!=='game'||h.slot===hit?.slot))match=true;current=current.parent;}
-      if(!match)return;
-      selected.push(node);
-    });
-    if(this.outline){this.outline.selectedObjects=selected;this.outline.enabled=selected.length>0;}
-    this.dirty=true;
+    this.highlightBounds=kind==='shelf'?this.hoverTargets.find(t=>t.hit.kind==='shelf')?.bounds:
+      kind==='game'?this.slots[hit!.slot!]?.bounds:undefined;
+    // A projected, straight-edged outline needs no scene render, lighting pass or mesh traversal.
+    this.updateHighlightOverlay();
+    if(this.outline){
+      const selected=kind==='computer'||kind==='trophies'?this.outlineTargets.get(kind)??[]:[];
+      const wasEnabled=this.outline.enabled;
+      this.outline.selectedObjects=selected;this.outline.enabled=selected.length>0;
+      if(wasEnabled||this.outline.enabled)this.dirty=true;
+    }
+  }
+  hoverGame(slot?:number){this.pendingPointer=undefined;this.setHighlight(slot===undefined?undefined:{kind:'game',slot});}
+  updateHighlightOverlay(){
+    const box=this.highlightBounds;
+    this.highlightOverlay.style.display=box?'block':'none';if(!box)return;
+    const width=this.host.clientWidth,height=this.host.clientHeight;
+    this.highlightOverlay.setAttribute('viewBox',`0 0 ${width} ${height}`);
+    const corners=[[box.min.x,box.min.y],[box.max.x,box.min.y],[box.max.x,box.max.y],[box.min.x,box.max.y]];
+    this.highlightPath.setAttribute('points',corners.map(([x,y])=>{
+      const v=new THREE.Vector3(x,y,box.max.z+.004).project(this.camera);
+      return `${(v.x+1)*width/2},${(1-v.y)*height/2}`;
+    }).join(' '));
+  }
+  hoverHit(event:{clientX:number;clientY:number}):Hit|undefined{
+    if(!this.ready||this.read().blocked||this.read().view==='library')return;
+    const rect=this.renderer.domElement.getBoundingClientRect();
+    this.pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1);
+    this.raycaster.setFromCamera(this.pointer,this.camera);
+    const point=new THREE.Vector3();let nearest=Infinity,result:Hit|undefined;
+    if(this.read().view==='shelf'){
+      for(let i=0;i<this.slots.length;i++){
+        if(this.raycaster.ray.intersectBox(this.slots[i].bounds,point)){
+          const d=point.distanceToSquared(this.raycaster.ray.origin);
+          if(d<nearest){nearest=d;result={kind:'game',slot:i};}
+        }
+      }
+      if(result)return result;
+    }
+    for(const target of this.hoverTargets){
+      if(this.raycaster.ray.intersectBox(target.bounds,point)){
+        const d=point.distanceToSquared(this.raycaster.ray.origin);
+        // Cups sit inside the shelf's broad volume: their smaller bounds take priority.
+        if(target.hit.kind==='trophies')return target.hit;
+        if(d<nearest){nearest=d;result=target.hit;}
+      }
+    }
+    return result;
   }
   resize(){
     const {width,height}=this.host.getBoundingClientRect();if(!width||!height)return;
@@ -323,12 +384,8 @@ class RoomEngine {
     if(hit.kind==='game'){if(p.view==='shelf')p.onGame(p.ranked[hit.slot!]);else p.onShelf();}
     else if(hit.kind==='shelf')p.onShelf();else if(hit.kind==='computer')p.onComputer();else p.onTrophies();
   };
-  move=(event:PointerEvent)=>{
-    const hit=this.hit(event);const p=this.read();this.setHighlight(hit);
-    this.renderer.domElement.style.cursor=hit?'pointer':'default';
-    this.hover(!hit?'':hit.kind==='game'?(p.view==='shelf'?p.ranked[hit.slot!].title:'Explorar estantería'):hit.kind==='computer'?'Abrir mi ordenador':hit.kind==='trophies'?'Ver mis platinos':'Explorar estantería');
-  };
-  leave=()=>{this.hover('');this.setHighlight();};
+  move=(event:PointerEvent)=>{this.pendingPointer={clientX:event.clientX,clientY:event.clientY};};
+  leave=()=>{this.pendingPointer=undefined;this.setHighlight();this.renderer.domElement.style.cursor='default';};
   contextLost=(event:Event)=>{event.preventDefault();this.ready=false;this.state('error');};
 
   project(element:HTMLElement,position:THREE.Vector3){
@@ -352,7 +409,14 @@ class RoomEngine {
     if(this.disposed)return;
     const p=this.read(),view=p.view==='shelf'?'shelf':'room';
     if(this.ready){
+      if(this.pendingPointer){
+        const hoverStart=performance.now();
+        const hit=this.hoverHit(this.pendingPointer);this.pendingPointer=undefined;
+        this.setHighlight(hit);this.renderer.domElement.style.cursor=hit?'pointer':'default';
+        this.host.dataset.hoverMs=String(performance.now()-hoverStart);
+      }
       if(this.currentView!==view){
+        this.setHighlight();this.pendingPointer=undefined;
         this.currentView=view;this.startPosition.copy(this.camera.position);this.startQuaternion.copy(this.camera.quaternion);this.transitionStart=time;
         if(view==='shelf'){
           this.targetPosition.set(.2,1.42,-.55);const dummy=new THREE.PerspectiveCamera();dummy.position.copy(this.targetPosition);dummy.lookAt(.2,1.26,-3.2);this.targetQuaternion.copy(dummy.quaternion);
@@ -367,7 +431,7 @@ class RoomEngine {
       }
       this.host.dataset.motion=this.camera.position.distanceToSquared(this.targetPosition)>1e-6||this.camera.quaternion.angleTo(this.targetQuaternion)>.001?'moving':'idle';
       if(this.dirty&&!document.hidden){
-        this.camera.updateMatrixWorld();if(this.composer)this.composer.render();else this.renderer.render(this.scene,this.camera);this.anchors();this.dirty=false;
+        this.camera.updateMatrixWorld();if(this.composer)this.composer.render();else this.renderer.render(this.scene,this.camera);this.anchors();this.updateHighlightOverlay();this.dirty=false;
         this.host.dataset.rendered='true';this.host.dataset.slots=String(this.slots.length);this.host.dataset.frame=String(++this.renderedFrames);
         this.host.dataset.positions=JSON.stringify(Object.fromEntries([...this.decorations].filter(([,o])=>o.visible).map(([id,o])=>[id,o.position.toArray()])));
         this.host.dataset.placed=[...this.decorations.entries()].filter(([,o])=>o.visible&&o.children.length>0).map(([id])=>id).join('|');
@@ -378,7 +442,7 @@ class RoomEngine {
   dispose(){
     this.setHighlight();this.disposed=true;cancelAnimationFrame(this.frame);this.resizeObserver.disconnect();
     const c=this.renderer.domElement;c.removeEventListener('click',this.click);c.removeEventListener('pointermove',this.move);c.removeEventListener('pointerleave',this.leave);c.removeEventListener('webglcontextlost',this.contextLost);
-    for(const pass of this.composer?.passes??[])pass.dispose();this.composer?.dispose();disposeTree(this.scene);this.appearance.dispose();this.environment.dispose();this.renderer.dispose();this.renderer.forceContextLoss();c.remove();
+    for(const pass of this.composer?.passes??[])pass.dispose();this.composer?.dispose();disposeTree(this.scene);this.appearance.dispose();this.environment.dispose();this.renderer.dispose();this.renderer.forceContextLoss();c.remove();this.highlightOverlay.remove();
   }
 }
 
@@ -403,7 +467,7 @@ export function Room3D(props:Props){
         <button data-anchor="computer" aria-label="Abrir ajustes desde el ordenador" onClick={props.onComputer}>Mi ordenador <span>↗</span></button>
         <button data-anchor="trophies" aria-label="Ver estantería de platinos" onClick={props.onTrophies}>Mis platinos <span>↗</span></button>
       </nav>}
-      {status==='ready'&&props.view==='shelf'&&<nav className="three-game-actions" aria-label="Juegos de la estantería">{props.ranked.map((g,i)=><button key={i} className="case three-game-hit" data-slot={i} data-game-id={g.id} aria-label={`Ver ${g.title}`} title={g.title} onClick={()=>props.onGame(g)}><span className="sr-only">{g.title}</span></button>)}</nav>}
+      {status==='ready'&&props.view==='shelf'&&<nav className="three-game-actions" aria-label="Juegos de la estantería">{props.ranked.map((g,i)=><button key={i} className="case three-game-hit" data-slot={i} data-game-id={g.id} aria-label={`Ver ${g.title}`} title={g.title} onPointerEnter={()=>engine.current?.hoverGame(i)} onPointerLeave={()=>engine.current?.hoverGame()} onClick={()=>props.onGame(g)}><span className="sr-only">{g.title}</span></button>)}</nav>}
 
       <div className="equipped-status sr-only" aria-label="Objetos colocados">{props.equipped.map(id=><span className={`placed-${id}`} key={id}>{id}</span>)}</div>
     </div>
