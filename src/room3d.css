@@ -10,3 +10,5 @@
 
 .shelf-search-access{padding:8px 12px;gap:7px;border-radius:6px;background:#1d2722db;font-size:11px;box-shadow:0 3px 12px #0003}
 .three-canvas canvas{touch-action:none}
+.interaction-outline image{filter:drop-shadow(0 0 3px #ffd78aaa)}
+.shelf-search-access{visibility:hidden}

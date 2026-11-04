@@ -63,7 +63,7 @@ test('la ficha usa una imagen real y conserva una ilustración si no hay red',as
  await expect(image).toBeVisible();expect(await image.evaluate((i:HTMLImageElement)=>i.naturalWidth)).toBeGreaterThan(0);
  await expect(image).toHaveAttribute('src',/367520\/library_600x900/);
  await page.getByRole('button',{name:'Cerrar detalles'}).click();
- await page.unroute('https://cdn.cloudflare.steamstatic.com/**');await page.route('https://cdn.cloudflare.steamstatic.com/**',route=>route.abort());
+ await page.unroute('https://cdn.cloudflare.steamstatic.com/**');await page.route(/^https:/,route=>route.abort());
  await page.getByRole('button',{name:'Ver Hollow Knight',exact:true}).click();
  await expect(page.getByRole('dialog').getByRole('img',{name:'Ilustración de reserva para Hollow Knight'})).toBeVisible();
 });

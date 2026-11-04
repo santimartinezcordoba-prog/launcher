@@ -99,7 +99,7 @@ Al pasar el ratón por los objetos interactivos, un contorno dorado con brillo m
 
 La estantería y los juegos utilizan un contorno SVG proyectado desde sus límites, con cuatro lados rectos y un brillo uniforme. El borde no reproduce las irregularidades de la malla. Cambiar de juego actualiza solo ese contorno: no vuelve a ejecutar el render de la habitación ni el sombreado de contacto.
 
-Los movimientos del ratón sobre el canvas se agrupan una vez por fotograma, conservando la última posición, y se comprueban contra volúmenes precalculados. Los botones de juegos actualizan el contorno directamente. Se evitan recorridos de las mallas y actualizaciones de estado React al mover el ratón; los clics sobre el canvas conservan su comprobación precisa de geometría y oclusión. El ordenador y los trofeos también utilizan contornos proyectados de bajo coste. Ningún resaltado necesita ejecutar pases WebGL adicionales.
+Los movimientos del ratón sobre el canvas se agrupan una vez por fotograma, conservando la última posición, y se comprueban contra volúmenes precalculados. Los botones de juegos actualizan el contorno directamente. Se evitan recorridos de las mallas y actualizaciones de estado React al mover el ratón; los clics sobre el canvas conservan su comprobación precisa de geometría y oclusión. El ordenador utiliza una silueta calculada una vez por cámara y tamaño de ventana, sin iluminación ni posprocesado. Al pasar el ratón se muestra su imagen de contorno guardada, incluidos los huecos entre patas y silla. Los juegos y la estantería mantienen sus contornos ligeros; ningún movimiento del ratón vuelve a renderizar la habitación.
 
 La prueba de interacción recorre doce juegos con ráfagas de eventos, comprueba que cada contorno cambia y que el contador de renders WebGL permanece igual. Mide por separado el trabajo del manejador; esto no equivale a garantizar una tasa de fotogramas en todos los equipos.
 
@@ -107,7 +107,7 @@ La prueba de interacción recorre doce juegos con ráfagas de eventos, comprueba
 
 El botón Biblioteca junto a la estantería y Ctrl+K abren la biblioteca amplia con búsqueda, filtros y portadas. Las fichas muestran imágenes de Steam u otras fuentes de arte del juego; se cargan directamente desde sus CDN, sin API ni cuentas. Requieren conexión y pueden dejar de estar disponibles. El entorno de desarrollo bloquea el acceso a esos CDN, por lo que no se ha verificado aquí cada portada externa: las pruebas interceptan una respuesta de imagen para verificar su presentación y prueban el fallo de red. Si la imagen no carga, aparece una ilustración local señalada como reserva. No se usa un rectángulo con el título como sustituto de portada.
 
-Para comprobar la versión descargada, abre el ordenador: debe indicar **0.3.1 · Arrastre y vistas de superficies**. Al sustituir un ZIP, detén Vite con Ctrl+C en la terminal anterior, abre una terminal en la carpeta nueva y ejecuta `npm ci` y `npm run dev`. Abre el puerto que indique esa terminal; recarga la página con Ctrl+Shift+R. Abrir otro ZIP no cambia el proyecto que sirve un Vite antiguo.
+Para comprobar la versión descargada, abre el ordenador: debe indicar **0.3.2 · Carátulas y siluetas**. Al sustituir un ZIP, detén Vite con Ctrl+C en la terminal anterior, abre una terminal en la carpeta nueva y ejecuta `npm ci` y `npm run dev`. Abre el puerto que indique esa terminal; recarga la página con Ctrl+Shift+R. Abrir otro ZIP no cambia el proyecto que sirve un Vite antiguo.
 
 Vistas del editor y la biblioteca lateral (esta captura simula la falta de conexión a los CDN de portadas):
 
@@ -132,3 +132,21 @@ Vistas de la versión 0.3.1 (las portadas de esta captura usan la reserva sin co
 ![Biblioteca amplia](docs/library-wide.png)
 
 ![Zona libre del escritorio](docs/front-desk.png)
+
+## Carátulas, lomos y siluetas (0.3.2)
+
+Biblioteca queda centrado bajo la estantería en la vista cercana. El encuadre deja espacio inferior para el botón. La ficha y las tarjetas utilizan proporción vertical 2:3 y `object-fit: contain`, mostrando toda la ilustración sin deformarla ni recortar títulos. Las imágenes horizontales de reserva conservan su proporción y dejan márgenes.
+
+Los lomos incluyen una pequeña ilustración completa y un fondo impreso derivado del arte, con el título vertical. Sus imágenes se cargan de forma asíncrona, se reducen para ahorrar memoria y se comparten entre actualizaciones. Los cambios de ambiente no repiten sus descargas. Sin arte disponible se conserva un diseño ilustrado local; para usar imágenes como texturas el servidor debe admitir CORS. Las actualizaciones de texturas se agrupan y se posponen mientras se recorren juegos con el ratón.
+
+La biblioteca y la ficha prueban fuentes alternativas de Steam antes de usar la reserva. La ficha permite Reintentar. Minecraft, Hearthstone, los títulos de Riot y Fortnite dependen de otras fuentes externas; algunas direcciones siguen sin estar verificadas y pueden fallar aunque Steam funcione. No se afirma que todas las carátulas estén reparadas o disponibles sin conexión. El paisaje de reserva indica un fallo de carga de la imagen, no que falte el juego ni su licencia.
+
+El contorno del setup se obtiene de una máscara plana de sus mallas y se guarda como PNG transparente. Ese cálculo se repite al cambiar cámara o ventana, no al mover el ratón. La estantería conserva un reborde liso para no reproducir las irregularidades de su modelo.
+
+Capturas de 0.3.2 sin conexión a las fuentes de arte (se ven diseños e ilustraciones de reserva):
+
+| Silueta del setup | Biblioteca bajo el mueble |
+| --- | --- |
+| ![Contorno de mesa y silla](docs/setup-silhouette.png) | ![Botón bajo la estantería](docs/library-below.png) |
+
+![Ilustración completa en la ficha](docs/poster-fit.png)

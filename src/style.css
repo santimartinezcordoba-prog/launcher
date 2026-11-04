@@ -8,3 +8,12 @@
 .view-library .room-frame{opacity:.2;filter:blur(8px);pointer-events:none}
 .view-library .vignette{background:#14171388}
 .game-art .cover-bottom{position:absolute}
+/* Preserve the entire publisher illustration; the frame follows its portrait ratio. */
+.game-art{padding:0;height:auto!important;aspect-ratio:2/3;background:#111917}
+.game-poster,.detail-art .game-poster{object-fit:contain;background:#111917}
+.game-art .cover-bottom{display:none}
+.detail-art{align-self:start;aspect-ratio:2/3;min-height:0;max-height:calc(90svh - 30px);position:sticky;top:0;background:#111917}
+.detail-art .artwork-offline{font-size:10px}
+.artwork-offline{font-size:8px;line-height:1.4;background:#14232ac9;bottom:8px!important}
+.artwork-offline button{padding:3px 6px;text-decoration:underline;color:#efd2a1;font-size:10px}
+@media(max-width:700px){.detail-art{position:relative;max-height:320px;aspect-ratio:2/3;width:100%;min-height:0}}
