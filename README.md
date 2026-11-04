@@ -150,3 +150,15 @@ Capturas de 0.3.2 sin conexión a las fuentes de arte (se ven diseños e ilustra
 | ![Contorno de mesa y silla](docs/setup-silhouette.png) | ![Botón bajo la estantería](docs/library-below.png) |
 
 ![Ilustración completa en la ficha](docs/poster-fit.png)
+
+## Fichas ampliadas (0.4.0)
+
+Las fichas tienen pestañas Información, Tu actividad y Galería. Se muestran tienda e instalación, géneros, mando, modos, número de jugadores cuando se conoce, idiomas y disponibilidad de voces/subtítulos. Las horas, logros e instalación siguen siendo ejemplos; última partida, tamaño de descarga y tamaño instalado no se inventan y quedan sin confirmar hasta conectar cuentas y detectar instalaciones.
+
+Los juegos con un identificador Steam pueden consultar su ficha pública mediante `/api/store-details/:id`. El servidor de Vite (desarrollo y preview) y el protocolo local de Electron implementan esta ruta con destino fijo, ID numérico, timeout, caché acotada, texto sin HTML y medios HTTPS de CDN conocidos. La fuente Steam se identifica incluso cuando el juego está en otra tienda, pues las ediciones pueden diferir. No hay autenticación ni acceso a las bibliotecas privadas. En hosting estático sin esa ruta, o sin conexión, se mantiene la ficha y el botón de reintento.
+
+La galería carga hasta seis capturas y dos tráileres que devuelva Steam. Las capturas se pueden ampliar y los vídeos usan controles, sin reproducción automática ni precarga. No todos los juegos proporcionan material. Abrir en la tienda conduce a su ficha o catálogo oficial; Electron permite abrir únicamente dominios de tiendas explícitamente admitidos en el navegador del sistema. Las partidas y logros no se comparten ni se suman entre plataformas.
+
+Validación: compilación de producción, dos pruebas de navegador con datos de tienda simulados, fallo de red y reintento; comprobación del saneamiento de la respuesta y rechazo de IDs inválidos. La consulta real a cada tienda y la ventana de Electron en Windows quedan sin verificar en este entorno.
+
+![Ficha ampliada con respuesta de tienda simulada y portada de reserva](docs/game-info.png)

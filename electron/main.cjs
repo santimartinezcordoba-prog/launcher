@@ -1,5 +1,6 @@
-const { app, BrowserWindow, session, protocol, net } = require('electron');
+const { app, BrowserWindow, session, protocol, net, shell } = require('electron');
 const path = require('node:path');
+const {storeDetails}=require('./store-details.cjs');
 const { pathToFileURL } = require('node:url');
 // A local secure origin lets GLTFLoader fetch packaged GLB files without
 // disabling browser security or depending on a development HTTP server.
@@ -13,6 +14,8 @@ app.whenReady().then(() => {
     try {
       const url = new URL(request.url);
       if (url.hostname !== 'launcher') return new Response('Not found', { status: 404 });
+      const media=/^\/api\/store-details\/(\d{1,10})$/.exec(url.pathname);
+      if(media){try{return Response.json(await storeDetails(media[1],net.fetch));}catch{return Response.json({error:'No se pudo consultar la tienda'},{status:502});}}
       const filename = path.resolve(dist, '.' + decodeURIComponent(url.pathname));
       const relative = path.relative(dist, filename);
       if (relative.startsWith('..') || path.isAbsolute(relative)) return new Response('Forbidden', { status: 403 });
@@ -27,7 +30,10 @@ app.whenReady().then(() => {
     backgroundColor: '#171716', autoHideMenuBar: true,
     webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true }
   });
-  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  win.webContents.setWindowOpenHandler(({url}) => {
+    try{const u=new URL(url);if(u.protocol==='https:'&&['store.steampowered.com','store.epicgames.com','www.ubisoft.com','www.xbox.com','www.ea.com','shop.battle.net','www.riotgames.com','www.gog.com'].includes(u.hostname))void shell.openExternal(u.href);}catch{}
+    return {action:'deny'};
+  });
   win.webContents.on('will-navigate', event => event.preventDefault());
   win.loadURL('room://launcher/index.html');
 });
