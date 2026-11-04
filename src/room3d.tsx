@@ -8,6 +8,7 @@ import './room3d.css';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomAppearance } from './room-appearance';
 import { placementSpots } from './placement';
@@ -93,7 +94,8 @@ class RoomEngine {
   bedding: THREE.MeshStandardMaterial[]=[];
   originalColors=new Map<THREE.Material,THREE.Color>();
   decorations = new Map<string,THREE.Group>();
-  highlighted=new Map<THREE.Mesh,THREE.Material|THREE.Material[]>();highlightKey='';
+  highlightKey='';
+  outline?:OutlinePass;
   disposed=false; dirty=true; ready=false; frame=0; renderedFrames=0; transitionStart=0;
   startPosition=new THREE.Vector3();startQuaternion=new THREE.Quaternion();
   stateKey=''; decorationKey=''; currentView='';
@@ -181,13 +183,22 @@ class RoomEngine {
         node.userData.hit={kind:'game',slot:best};
       });
       this.mergeFloor();
-      if(this.renderer.extensions.has('EXT_color_buffer_float')){
-      this.composer=new EffectComposer(this.renderer);this.composer.renderTarget1.samples=2;this.composer.renderTarget2.samples=2;
+      const floatingPoint=this.renderer.extensions.has('EXT_color_buffer_float');
+      const target=new THREE.WebGLRenderTarget(1,1,{type:floatingPoint?THREE.HalfFloatType:THREE.UnsignedByteType});
+      target.samples=2;
+      this.composer=new EffectComposer(this.renderer,target);
       this.composer.addPass(new RenderPass(this.scene,this.camera));
-      const contact=new ContactOcclusion(this.scene,this.camera);contact.blendIntensity=.55;
-      contact.updateGtaoMaterial({radius:.22,thickness:.25,samples:8,scale:1});contact.updatePdMaterial({samples:8,radius:4});
-      this.composer.addPass(contact);this.composer.addPass(new OutputPass());this.composer.setSize(this.host.clientWidth,this.host.clientHeight);
+      if(floatingPoint){
+        const contact=new ContactOcclusion(this.scene,this.camera);contact.blendIntensity=.55;
+        contact.updateGtaoMaterial({radius:.22,thickness:.25,samples:8,scale:1});contact.updatePdMaterial({samples:8,radius:4});
+        this.composer.addPass(contact);
       }
+      this.outline=new OutlinePass(new THREE.Vector2(this.host.clientWidth,this.host.clientHeight),this.scene,this.camera);
+      this.outline.visibleEdgeColor.set('#ffe1a1');this.outline.hiddenEdgeColor.set('#000000');
+      this.outline.edgeStrength=4;this.outline.edgeGlow=.5;this.outline.edgeThickness=1.5;
+      this.outline.pulsePeriod=0;this.outline.enabled=false;
+      this.composer.addPass(this.outline);this.composer.addPass(new OutputPass());
+      this.composer.setSize(this.host.clientWidth,this.host.clientHeight);
       this.ready=true;this.apply();this.state('ready');this.dirty=true;
     },undefined,()=>{if(!this.disposed)this.state('error');});
     this.frame=requestAnimationFrame(this.tick);
@@ -275,17 +286,16 @@ class RoomEngine {
   setHighlight(hit?:Hit){
     const kind=hit?.kind==='game'&&this.read().view==='room'?'shelf':hit?.kind;
     const key=kind?kind+(kind==='game'?hit?.slot:''):'';if(key===this.highlightKey)return;
-    for(const [mesh,original] of this.highlighted){for(const m of Array.isArray(mesh.material)?mesh.material:[mesh.material])m.dispose();mesh.material=original;}
-    this.highlighted.clear();this.highlightKey=key;this.host.dataset.highlight=kind??'';
+    const selected:THREE.Object3D[]=[];
+    this.highlightKey=key;this.host.dataset.highlight=kind??'';
     if(kind)this.scene.traverse(node=>{
       if(!(node instanceof THREE.Mesh)||!node.visible)return;
       let current:THREE.Object3D|null=node,match=false;
       while(current){const h=current.userData.hit as Hit|undefined;if(h&&(h.kind===kind||(kind==='shelf'&&h.kind==='game'))&&(kind!=='game'||h.slot===hit?.slot))match=true;current=current.parent;}
       if(!match)return;
-      const original=node.material;this.highlighted.set(node,original);
-      const brighten=(m:THREE.Material)=>{const clone=m.clone();if(clone instanceof THREE.MeshStandardMaterial){clone.emissive.set('#e6bd70');clone.emissiveIntensity=.32;}return clone;};
-      node.material=Array.isArray(original)?original.map(brighten):brighten(original);
+      selected.push(node);
     });
+    if(this.outline){this.outline.selectedObjects=selected;this.outline.enabled=selected.length>0;}
     this.dirty=true;
   }
   resize(){
