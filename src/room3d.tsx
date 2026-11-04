@@ -8,15 +8,16 @@ import './room3d.css';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
-import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomAppearance } from './room-appearance';
-import { placementSpots } from './placement';
+import { furniture, snapPlacement, type Arrangement, type Surface } from './arrangement';
+import type { EditSession } from './room-editor';
 
 export type RoomPreferences = { mood: 'warm'|'night'|'day'; wall: string; bedding: string; reduced: boolean };
 type Props = {
   view: 'room'|'shelf'|'library'; ranked: Game[]; favorites: number[];
-  prefs: RoomPreferences; equipped: string[]; placements:Record<string,string>; rotations:Record<string,number>; blocked: boolean;
+  prefs: RoomPreferences; equipped: string[]; arranged:Record<string,Arrangement>; editor:EditSession|null; blocked: boolean;
+  onPick:(position:Arrangement)=>void;onSurface:(surface:Surface)=>void;
   onShelf: () => void; onComputer: () => void; onTrophies: () => void;
   onGame: (game: Game) => void; onLibrary: () => void;
 };
@@ -63,7 +64,15 @@ function proceduralCollectible(id: string) {
   const part=(geometry:THREE.BufferGeometry,position:[number,number,number],material=body,scale?:[number,number,number])=>{
     const mesh=new THREE.Mesh(geometry,material);mesh.position.set(...position);if(scale)mesh.scale.set(...scale);mesh.castShadow=true;group.add(mesh);return mesh;
   };
-  if(id==='crystal'){
+  if(id==='plant'){
+    body.color.set('#b68a6c');part(new THREE.CylinderGeometry(.19,.14,.32,20),[0,.16,0]);
+    const green=new THREE.MeshStandardMaterial({color:'#6f8c53',roughness:.85});
+    for(let i=0;i<7;i++){const angle=i*Math.PI*2/7;const leaf=part(new THREE.SphereGeometry(.16,12,8),[Math.cos(angle)*.13,.5+(i%3)*.15,Math.sin(angle)*.13],green,[.55,1.8,.35]);leaf.rotation.z=Math.cos(angle)*.5;}
+  }else if(id==='table'||id==='stool'){
+    body.color.set('#b8976b');const w=id==='table'?.85:.5,d=id==='table'?.6:.5,h=id==='table'?.65:.46;
+    part(new THREE.BoxGeometry(w,.08,d),[0,h,0]);
+    for(const x of [-w*.36,w*.36])for(const z of [-d*.34,d*.34])part(new THREE.BoxGeometry(.055,h,.055),[x,h/2,z]);
+  }else if(id==='crystal'){
     const gem=part(new THREE.OctahedronGeometry(.11),[0,.13,0]);gem.scale.set(.7,1.4,.7);body.metalness=.3;body.roughness=.22;
   }else if(id==='cat'){
     part(new THREE.SphereGeometry(.09,20,14),[0,.09,0],body,[1,1.05,.75]);
@@ -75,7 +84,7 @@ function proceduralCollectible(id: string) {
     part(new THREE.BoxGeometry(.13,.045,.01),[0,.26,.06],dark);
     for(const x of [-.04,.04])part(new THREE.BoxGeometry(.045,.04,.075),[x,.03,.01],dark);
   }
-  group.rotation.y=-Math.PI/2;
+  group.rotation.y=furniture[id]?0:-Math.PI/2;
   return group;
 }
 
@@ -95,12 +104,12 @@ class RoomEngine {
   originalColors=new Map<THREE.Material,THREE.Color>();
   decorations = new Map<string,THREE.Group>();
   highlightKey='';
-  outline?:OutlinePass;
+  editorGrid=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  hiddenArchitecture=new Map<THREE.Object3D,boolean>();
   highlightOverlay=document.createElementNS('http://www.w3.org/2000/svg','svg');
   highlightPath=document.createElementNS('http://www.w3.org/2000/svg','polygon');
   highlightBounds?:THREE.Box3;
   hoverTargets:{hit:Hit;bounds:THREE.Box3}[]=[];
-  outlineTargets=new Map<Kind,THREE.Mesh[]>();
   pendingPointer?:{clientX:number;clientY:number};
   disposed=false; dirty=true; ready=false; frame=0; renderedFrames=0; transitionStart=0;
   startPosition=new THREE.Vector3();startQuaternion=new THREE.Quaternion();
@@ -108,6 +117,7 @@ class RoomEngine {
   environment:THREE.Texture;
   appearance:RoomAppearance;
   composer?:EffectComposer;
+  contactPass?:ContactOcclusion;
   hemisphere=new THREE.HemisphereLight('#e5e4f2','#8a6848',1.15);
   sun=new THREE.DirectionalLight('#ffe0b7',2);
   raycaster=new THREE.Raycaster();
@@ -119,13 +129,14 @@ class RoomEngine {
   constructor(private host:HTMLDivElement,private read:()=>Props,private state:(value:string)=>void,private hover:(label:string)=>void) {
     for(const name of ['rendered','frame','slots','placed','motion'])delete this.host.dataset[name];
     this.renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'low-power'});
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.5));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.25));
     this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.AgXToneMapping;this.renderer.toneMappingExposure=1;
     this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.autoUpdate=false;this.renderer.shadowMap.needsUpdate=true;this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;
     this.renderer.domElement.setAttribute('aria-label','Habitación 3D interactiva');
     this.host.appendChild(this.renderer.domElement);
     this.highlightOverlay.classList.add('interaction-outline');this.highlightOverlay.setAttribute('aria-hidden','true');
     this.highlightOverlay.appendChild(this.highlightPath);this.host.appendChild(this.highlightOverlay);
+    this.editorGrid.classList.add('placement-grid');this.editorGrid.setAttribute('aria-hidden','true');this.host.appendChild(this.editorGrid);
     this.scene.background=new THREE.Color('#191d21');
     const generator=new THREE.PMREMGenerator(this.renderer);const studio=new RoomEnvironment();
     this.environment=generator.fromScene(studio,.04).texture;this.scene.environment=this.environment;studio.dispose();generator.dispose();
@@ -200,13 +211,9 @@ class RoomEngine {
       if(floatingPoint){
         const contact=new ContactOcclusion(this.scene,this.camera);contact.blendIntensity=.55;
         contact.updateGtaoMaterial({radius:.22,thickness:.25,samples:8,scale:1});contact.updatePdMaterial({samples:8,radius:4});
-        this.composer.addPass(contact);
+        this.contactPass=contact;this.composer.addPass(contact);
       }
-      this.outline=new OutlinePass(new THREE.Vector2(this.host.clientWidth,this.host.clientHeight),this.scene,this.camera);
-      this.outline.visibleEdgeColor.set('#ffe1a1');this.outline.hiddenEdgeColor.set('#000000');
-      this.outline.edgeStrength=4;this.outline.edgeGlow=.5;this.outline.edgeThickness=1.5;
-      this.outline.pulsePeriod=0;this.outline.enabled=false;
-      this.composer.addPass(this.outline);this.composer.addPass(new OutputPass());
+      this.composer.addPass(new OutputPass());
       this.composer.setSize(this.host.clientWidth,this.host.clientHeight);
       this.ready=true;this.apply();this.state('ready');this.dirty=true;
     },undefined,()=>{if(!this.disposed)this.state('error');});
@@ -263,12 +270,12 @@ class RoomEngine {
       this.dirty=true;
     }
     if(p.blocked)this.setHighlight();
-    const decoKey=JSON.stringify([p.equipped,p.placements,p.rotations]);
+    const decoKey=JSON.stringify([p.equipped,p.arranged,p.editor?.id,p.editor?.draft]);
     if(decoKey!==this.decorationKey){
       this.decorationKey=decoKey;
-      for(const [id,object] of this.decorations){object.visible=p.equipped.includes(id);this.placeObject(id,object);}
-      for(const [index,id] of ['cat','crystal','robot','duck','figure'].entries()){
-        if(!p.equipped.includes(id)||this.decorations.has(id))continue;
+      for(const [id,object] of this.decorations){object.visible=p.equipped.includes(id)||Boolean(p.editor?.id===id&&p.editor.draft);this.placeObject(id,object);}
+      for(const id of new Set([...p.equipped,...(p.editor?.draft?[p.editor.id]:[])])){
+        if(this.decorations.has(id))continue;
         if(id==='duck'||id==='figure'){
           const placeholder=new THREE.Group();this.decorations.set(id,placeholder);
           this.loader.load(`./models/${id}.glb`,gltf=>{
@@ -276,7 +283,7 @@ class RoomEngine {
             gltf.scene.traverse(o=>{if(o instanceof THREE.Mesh){o.castShadow=true;o.receiveShadow=true;}});
             const box=new THREE.Box3().setFromObject(gltf.scene),center=box.getCenter(new THREE.Vector3());
             const pivot=new THREE.Group();gltf.scene.position.sub(new THREE.Vector3(center.x,box.min.y,center.z));pivot.add(gltf.scene);
-            this.placeObject(id,pivot);pivot.visible=this.read().equipped.includes(id);
+            this.placeObject(id,pivot);pivot.visible=this.read().equipped.includes(id)||this.read().editor?.id===id;
             this.scene.add(pivot);this.decorations.set(id,pivot);this.renderer.shadowMap.needsUpdate=true;this.dirty=true;
           },undefined,()=>{if(!this.disposed){this.decorations.delete(id);this.hover('No se pudo cargar el objeto. Retíralo y vuelve a colocarlo.');}});
         }else{
@@ -288,9 +295,9 @@ class RoomEngine {
   }
 
   placeObject(id:string,object:THREE.Group){
-    const p=this.read();const index=p.equipped.indexOf(id);
-    const spot=placementSpots.find(s=>s.id===p.placements[id])??placementSpots[Math.max(0,index)];
-    object.position.set(...spot.position);object.rotation.y=(object.userData.baseRotation??0)+(p.rotations[id]??0)*Math.PI/180;
+    const p=this.read();const position=p.editor?.id===id&&p.editor.draft?p.editor.draft:p.arranged[id];
+    if(!position)return;
+    object.position.set(position.x,position.y,position.z);object.rotation.y=(object.userData.baseRotation??0)+position.rotation*Math.PI/180;
   }
   cacheInteractionTargets(){
     // Cache world bounds once, rather than tracing the imported high-poly furniture on every move.
@@ -300,7 +307,6 @@ class RoomEngine {
       let current:THREE.Object3D|null=node,hit:Hit|undefined;
       while(current){if(current.userData.hit)hit=current.userData.hit as Hit;current=current.parent;}
       if(!hit||hit.kind==='game')return;
-      const meshes=this.outlineTargets.get(hit.kind)??[];meshes.push(node);this.outlineTargets.set(hit.kind,meshes);
       const box=new THREE.Box3().setFromObject(node);
       if(hit.kind==='trophies')this.hoverTargets.push({hit,bounds:box});
       else {const bounds=grouped.get(hit.kind)??new THREE.Box3();bounds.union(box);grouped.set(hit.kind,bounds);}
@@ -311,16 +317,11 @@ class RoomEngine {
     const kind=hit?.kind==='game'&&this.read().view==='room'?'shelf':hit?.kind;
     const key=kind?kind+(kind==='game'?hit?.slot:''):'';if(key===this.highlightKey)return;
     this.highlightKey=key;this.host.dataset.highlight=kind??'';
-    this.highlightBounds=kind==='shelf'?this.hoverTargets.find(t=>t.hit.kind==='shelf')?.bounds:
-      kind==='game'?this.slots[hit!.slot!]?.bounds:undefined;
-    // A projected, straight-edged outline needs no scene render, lighting pass or mesh traversal.
+    // Every hover outline is a light 2D overlay; none of them redraw the room.
+    this.highlightBounds=kind==='game'?this.slots[hit!.slot!]?.bounds:
+      kind==='shelf'?(this.read().view==='shelf'?undefined:this.hoverTargets.find(t=>t.hit.kind==='shelf')?.bounds):
+      kind?this.hoverTargets.filter(t=>t.hit.kind===kind).reduce((box,t)=>box.union(t.bounds),new THREE.Box3()):undefined;
     this.updateHighlightOverlay();
-    if(this.outline){
-      const selected=kind==='computer'||kind==='trophies'?this.outlineTargets.get(kind)??[]:[];
-      const wasEnabled=this.outline.enabled;
-      this.outline.selectedObjects=selected;this.outline.enabled=selected.length>0;
-      if(wasEnabled||this.outline.enabled)this.dirty=true;
-    }
   }
   hoverGame(slot?:number){this.pendingPointer=undefined;this.setHighlight(slot===undefined?undefined:{kind:'game',slot});}
   updateHighlightOverlay(){
@@ -335,7 +336,7 @@ class RoomEngine {
     }).join(' '));
   }
   hoverHit(event:{clientX:number;clientY:number}):Hit|undefined{
-    if(!this.ready||this.read().blocked||this.read().view==='library')return;
+    if(!this.ready||this.read().editor||this.read().blocked||this.read().view==='library')return;
     const rect=this.renderer.domElement.getBoundingClientRect();
     this.pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1);
     this.raycaster.setFromCamera(this.pointer,this.camera);
@@ -359,12 +360,62 @@ class RoomEngine {
     }
     return result;
   }
+  updateEditorArchitecture(editing:boolean){
+    for(const [node,visible] of this.hiddenArchitecture)node.visible=visible;this.hiddenArchitecture.clear();
+    if(editing)this.root?.traverse(node=>{
+      if(!(node instanceof THREE.Mesh))return;
+      const name=normalName(node.name);
+      if(/techo|pared|cornisa|marco de entrada|cortina|ventana|plafon|tira led|rotulo|lamina|placa platinos/.test(name)){this.hiddenArchitecture.set(node,node.visible);node.visible=false;}
+    });
+    this.renderer.shadowMap.needsUpdate=true;
+  }
+  editorClick(event:MouseEvent){
+    const edit=this.read().editor;if(!edit)return;
+    const rect=this.renderer.domElement.getBoundingClientRect();
+    this.pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1);this.raycaster.setFromCamera(this.pointer,this.camera);
+    const point=new THREE.Vector3(),side=edit.surface==='shelves';
+    const height={floor:0,desk:.82,nightstand:.685,cabinet:2.34,shelves:0}[edit.surface];
+    const plane=side?new THREE.Plane(new THREE.Vector3(1,0,0),-3.11):new THREE.Plane(new THREE.Vector3(0,1,0),-height);
+    if(!this.raycaster.ray.intersectPlane(plane,point))return;
+    if(side){point.x=3.11;point.y=Math.abs(point.y-2.46)<Math.abs(point.y-2.03)?2.46:2.03;}
+    else point.y=height;
+    if(edit.surface==='floor'&&!furniture[edit.id]){
+      if(point.x>2.85&&point.z>-2.6&&point.z<-.8){this.read().onSurface('shelves');return;}
+      if(point.x>-.85&&point.x<1.2&&point.z< -2.9){this.read().onSurface('cabinet');return;}
+      if(point.x>2.4&&point.z> -1.2&&point.z<-.7){this.read().onSurface('desk');return;}
+      if(point.x< -2.4&&point.z> -2.2&&point.z< -1.6){this.read().onSurface('nightstand');return;}
+    }
+    this.read().onPick(snapPlacement(edit.surface,point.x,point.y,point.z,edit.rotation));
+  }
+  updateEditorGrid(){
+    const edit=this.read().editor;this.editorGrid.replaceChildren();if(!edit)return;
+    const width=this.host.clientWidth,height=this.host.clientHeight;this.editorGrid.setAttribute('viewBox',`0 0 ${width} ${height}`);
+    const project=(x:number,y:number,z:number)=>{const v=new THREE.Vector3(x,y,z).project(this.camera);return `${(v.x+1)*width/2},${(1-v.y)*height/2}`;};
+    const line=(a:string,b:string)=>{const element=document.createElementNS('http://www.w3.org/2000/svg','polyline');element.setAttribute('points',`${a} ${b}`);element.setAttribute('class','grid-line');this.editorGrid.appendChild(element);};
+    if(edit.surface==='shelves'){
+      for(const y of [2.03,2.46]){
+        line(project(3.08,y,-2.6),project(3.08,y,-.9));
+        for(let z=-2.6;z<=-.9;z+=.05)line(project(3.08,y,z),project(3.08,y+.13,z));
+      }
+    }else{
+      const y={floor:.025,desk:.83,nightstand:.695,cabinet:2.35}[edit.surface];
+      const bounds={floor:[-3.2,3.2,-3.5,3.5],desk:[2.45,3.15,-1.16,-.73],nightstand:[-3.16,-2.62,-2.29,-1.79],cabinet:[-.78,1.17,-3.48,-2.98]}[edit.surface];
+      const [left,right,back,front]=bounds,step=edit.surface==='floor'?.2:.05;
+      for(let x=left;x<=right+.001;x+=step)line(project(x,y,back),project(x,y,front));
+      for(let z=back;z<=front+.001;z+=step)line(project(left,y,z),project(right,y,z));
+    }
+    if(edit.draft){
+      const p=edit.draft,size=furniture[edit.id],w=size?.width??.24,d=size?.depth??.24;
+      const polygon=document.createElementNS('http://www.w3.org/2000/svg','polygon');polygon.setAttribute('class','cursor');
+      polygon.setAttribute('points',(edit.surface==='shelves'?[[p.x-.02,p.y,p.z-w/2],[p.x-.02,p.y,p.z+w/2],[p.x-.02,p.y+.3,p.z+w/2],[p.x-.02,p.y+.3,p.z-w/2]]:[[-w/2,0,-d/2],[w/2,0,-d/2],[w/2,0,d/2],[-w/2,0,d/2]].map(([x,,z])=>{const angle=p.rotation*Math.PI/180;return [p.x+x*Math.cos(angle)+z*Math.sin(angle),p.y+.03,p.z-x*Math.sin(angle)+z*Math.cos(angle)];})).map(([x,y,z])=>project(x,y,z)).join(' '));this.editorGrid.appendChild(polygon);
+    }
+  }
   resize(){
     const {width,height}=this.host.getBoundingClientRect();if(!width||!height)return;
     this.renderer.setSize(width,height);this.composer?.setSize(width,height);this.camera.aspect=width/height;this.camera.updateProjectionMatrix();this.dirty=true;
   }
   hit(event:PointerEvent|MouseEvent):Hit|undefined{
-    if(!this.ready||this.read().blocked||this.read().view==='library')return;
+    if(!this.ready||this.read().editor||this.read().blocked||this.read().view==='library')return;
     const rect=this.renderer.domElement.getBoundingClientRect();
     this.pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1);
     this.raycaster.setFromCamera(this.pointer,this.camera);
@@ -380,6 +431,7 @@ class RoomEngine {
     }
   }
   click=(event:MouseEvent)=>{
+    if(this.read().editor){this.editorClick(event);return;}
     const hit=this.hit(event);if(!hit)return;const p=this.read();
     if(hit.kind==='game'){if(p.view==='shelf')p.onGame(p.ranked[hit.slot!]);else p.onShelf();}
     else if(hit.kind==='shelf')p.onShelf();else if(hit.kind==='computer')p.onComputer();else p.onTrophies();
@@ -395,7 +447,7 @@ class RoomEngine {
     element.style.visibility=v.z>1||v.z<0||Math.abs(v.x)>1||Math.abs(v.y)>1?'hidden':'visible';
   }
   anchors(){
-    const anchors:[string,THREE.Vector3][]=[['shelf',new THREE.Vector3(.2,.1,-2.95)],['computer',new THREE.Vector3(2.7,.85,-1.85)],['trophies',new THREE.Vector3(.2,2.42,-3.2)]];
+    const anchors:[string,THREE.Vector3][]=[['shelf',new THREE.Vector3(.2,.1,-2.95)],['computer',new THREE.Vector3(2.7,.85,-1.85)],['trophies',new THREE.Vector3(.2,2.42,-3.2)],['library',new THREE.Vector3(1.56,1.45,-3)],['edit-shelves',new THREE.Vector3(3,2.46,-1.7)],['edit-desk',new THREE.Vector3(2.8,.82,-.94)],['edit-nightstand',new THREE.Vector3(-2.74,.685,-1.91)],['edit-cabinet',new THREE.Vector3(.2,2.34,-3.2)]];
     for(const [id,point] of anchors){const el=this.host.parentElement?.querySelector<HTMLElement>(`[data-anchor="${id}"]`);if(el)this.project(el,point);}
     for(let i=0;i<this.slots.length;i++){
       const el=this.host.parentElement?.querySelector<HTMLElement>(`[data-slot="${i}"]`);if(!el)continue;
@@ -407,7 +459,7 @@ class RoomEngine {
   }
   tick=(time:number)=>{
     if(this.disposed)return;
-    const p=this.read(),view=p.view==='shelf'?'shelf':'room';
+    const p=this.read(),view=p.editor?`edit-${p.editor.surface}`:p.view==='library'?'library':p.view==='shelf'?'shelf':'room';
     if(this.ready){
       if(this.pendingPointer){
         const hoverStart=performance.now();
@@ -417,8 +469,15 @@ class RoomEngine {
       }
       if(this.currentView!==view){
         this.setHighlight();this.pendingPointer=undefined;
-        this.currentView=view;this.startPosition.copy(this.camera.position);this.startQuaternion.copy(this.camera.quaternion);this.transitionStart=time;
-        if(view==='shelf'){
+        this.currentView=view;this.host.dataset.camera=view;this.startPosition.copy(this.camera.position);this.startQuaternion.copy(this.camera.quaternion);this.transitionStart=time;
+        this.updateEditorArchitecture(Boolean(p.editor));
+        if(p.editor){
+          const surface=p.editor.surface;
+          if(surface==='shelves'){this.targetPosition.set(.1,2.3,-1.7);const dummy=new THREE.PerspectiveCamera();dummy.position.copy(this.targetPosition);dummy.lookAt(3.11,2.2,-1.7);this.targetQuaternion.copy(dummy.quaternion);}
+          else{this.targetPosition.set(0,10.5,.01);const dummy=new THREE.PerspectiveCamera();dummy.position.copy(this.targetPosition);dummy.up.set(0,0,-1);dummy.lookAt(0,0,0);this.targetQuaternion.copy(dummy.quaternion);}
+        }else if(view==='library'){
+          this.targetPosition.set(.2,1.8,1.1);const dummy=new THREE.PerspectiveCamera();dummy.position.copy(this.targetPosition);dummy.lookAt(1.1,1.3,-3.2);this.targetQuaternion.copy(dummy.quaternion);
+        }else if(view==='shelf'){
           this.targetPosition.set(.2,1.42,-.55);const dummy=new THREE.PerspectiveCamera();dummy.position.copy(this.targetPosition);dummy.lookAt(.2,1.26,-3.2);this.targetQuaternion.copy(dummy.quaternion);
         }else{this.targetPosition.copy(this.roomPosition);this.targetQuaternion.copy(this.roomQuaternion);}
         this.dirty=true;
@@ -431,7 +490,8 @@ class RoomEngine {
       }
       this.host.dataset.motion=this.camera.position.distanceToSquared(this.targetPosition)>1e-6||this.camera.quaternion.angleTo(this.targetQuaternion)>.001?'moving':'idle';
       if(this.dirty&&!document.hidden){
-        this.camera.updateMatrixWorld();if(this.composer)this.composer.render();else this.renderer.render(this.scene,this.camera);this.anchors();this.updateHighlightOverlay();this.dirty=false;
+        if(this.contactPass)this.contactPass.enabled=this.host.dataset.motion==='idle';
+        this.camera.updateMatrixWorld();if(this.composer)this.composer.render();else this.renderer.render(this.scene,this.camera);this.anchors();this.updateHighlightOverlay();this.updateEditorGrid();this.dirty=false;
         this.host.dataset.rendered='true';this.host.dataset.slots=String(this.slots.length);this.host.dataset.frame=String(++this.renderedFrames);
         this.host.dataset.positions=JSON.stringify(Object.fromEntries([...this.decorations].filter(([,o])=>o.visible).map(([id,o])=>[id,o.position.toArray()])));
         this.host.dataset.placed=[...this.decorations.entries()].filter(([,o])=>o.visible&&o.children.length>0).map(([id])=>id).join('|');
@@ -442,7 +502,7 @@ class RoomEngine {
   dispose(){
     this.setHighlight();this.disposed=true;cancelAnimationFrame(this.frame);this.resizeObserver.disconnect();
     const c=this.renderer.domElement;c.removeEventListener('click',this.click);c.removeEventListener('pointermove',this.move);c.removeEventListener('pointerleave',this.leave);c.removeEventListener('webglcontextlost',this.contextLost);
-    for(const pass of this.composer?.passes??[])pass.dispose();this.composer?.dispose();disposeTree(this.scene);this.appearance.dispose();this.environment.dispose();this.renderer.dispose();this.renderer.forceContextLoss();c.remove();this.highlightOverlay.remove();
+    for(const pass of this.composer?.passes??[])pass.dispose();this.composer?.dispose();disposeTree(this.scene);this.appearance.dispose();this.environment.dispose();this.renderer.dispose();this.renderer.forceContextLoss();c.remove();this.highlightOverlay.remove();this.editorGrid.remove();
   }
 }
 
@@ -454,21 +514,23 @@ export function Room3D(props:Props){
     try{engine.current=new RoomEngine(host.current!,()=>latest.current,setStatus,setHover);}catch{engine.current?.dispose();engine.current=null;setStatus('error');}
     return ()=>{engine.current?.dispose();engine.current=null;};
   },[retry]);
-  useEffect(()=>{if(engine.current)engine.current.dirty=true;},[status,props.view]);
+  useEffect(()=>{engine.current?.anchors();},[status,props.view,props.editor?.surface]);
   useEffect(()=>{if(props.blocked)setHover('');},[props.blocked]);
-  useEffect(()=>engine.current?.apply(),[props.ranked,props.favorites,props.prefs,props.equipped,props.placements,props.rotations,props.blocked]);
+  useEffect(()=>engine.current?.apply(),[props.ranked,props.favorites,props.prefs,props.equipped,props.arranged,props.editor,props.blocked]);
   return <div className="room-frame" inert={props.view==='library'} aria-hidden={props.view==='library'}>
     <div className="scene three-scene">
       <div ref={host} className="three-canvas" data-testid="room-3d" data-state={status}/>
       {status==='loading'&&<div className="room-load" role="status"><span className="load-orbit"/><strong>Preparando tu habitación</strong><p>Cargando los modelos 3D…</p></div>}
       {status==='error'&&<div className="room-load" role="alert"><strong>No se pudo abrir la habitación 3D</strong><p>Comprueba la aceleración gráfica del navegador y vuelve a intentarlo.</p><button className="primary-button" onClick={()=>setRetry(v=>v+1)}>Reintentar</button><button className="quiet-button" onClick={props.onLibrary}>Abrir biblioteca</button></div>}
-      {status==='ready'&&props.view==='room'&&<nav className="room-object-actions keyboard-object-actions" aria-label="Objetos de la habitación">
+      {status==='ready'&&!props.editor&&props.view==='room'&&<nav className="room-object-actions keyboard-object-actions" aria-label="Objetos de la habitación">
         <button data-anchor="shelf" aria-label="Acercarse a la estantería" onClick={props.onShelf}>Explorar estantería <span>↗</span></button>
         <button data-anchor="computer" aria-label="Abrir ajustes desde el ordenador" onClick={props.onComputer}>Mi ordenador <span>↗</span></button>
         <button data-anchor="trophies" aria-label="Ver estantería de platinos" onClick={props.onTrophies}>Mis platinos <span>↗</span></button>
       </nav>}
-      {status==='ready'&&props.view==='shelf'&&<nav className="three-game-actions" aria-label="Juegos de la estantería">{props.ranked.map((g,i)=><button key={i} className="case three-game-hit" data-slot={i} data-game-id={g.id} aria-label={`Ver ${g.title}`} title={g.title} onPointerEnter={()=>engine.current?.hoverGame(i)} onPointerLeave={()=>engine.current?.hoverGame()} onClick={()=>props.onGame(g)}><span className="sr-only">{g.title}</span></button>)}</nav>}
+      {status==='ready'&&!props.editor&&props.view==='shelf'&&<nav className="three-game-actions" aria-label="Juegos de la estantería">{props.ranked.map((g,i)=><button key={i} className="case three-game-hit" data-slot={i} data-game-id={g.id} aria-label={`Ver ${g.title}`} title={g.title} onPointerEnter={()=>engine.current?.hoverGame(i)} onPointerLeave={()=>engine.current?.hoverGame()} onClick={()=>props.onGame(g)}><span className="sr-only">{g.title}</span></button>)}</nav>}
 
+      {status==='ready'&&!props.editor&&props.view!=='library'&&<button className="shelf-search-access" data-anchor="library" onClick={props.onLibrary} aria-label="Buscar juegos en la biblioteca"><span>⌕</span> Buscar juegos <kbd>Ctrl K</kbd></button>}
+      {status==='ready'&&props.editor&&props.editor.surface!=='shelves'&&!furniture[props.editor.id]&&<nav className="editor-surfaces" aria-label="Elegir superficie">{(['shelves','desk','nightstand','cabinet'] as Surface[]).map(surface=><button key={surface} data-anchor={`edit-${surface}`} onClick={()=>props.onSurface(surface)}>{{shelves:'Decorar baldas',desk:'Escritorio',nightstand:'Mesilla',cabinet:'Sobre la estantería'}[surface as 'shelves'|'desk'|'nightstand'|'cabinet']}</button>)}</nav>}
       <div className="equipped-status sr-only" aria-label="Objetos colocados">{props.equipped.map(id=><span className={`placed-${id}`} key={id}>{id}</span>)}</div>
     </div>
   </div>;

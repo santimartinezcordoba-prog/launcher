@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { chooseFloor } from './editor-helpers';
 test('misión, compra sin duplicados, inventario y persistencia',async({page})=>{
  await page.goto('/');
  await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
@@ -18,6 +19,8 @@ test('misión, compra sin duplicados, inventario y persistencia',async({page})=>
  await expect(page.getByRole('button',{name:'En tu inventario'})).toBeDisabled();
  await page.getByRole('button',{name:'Inventario',exact:true}).click();
  await page.getByRole('button',{name:'Colocar en habitación'}).click();
+ await chooseFloor(page);
+ await page.getByRole('button',{name:'Guardar posición'}).click();
  await page.keyboard.press('Escape');
  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-placed','cat');
  await page.reload();

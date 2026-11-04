@@ -1,38 +1,78 @@
 import {test,expect} from '@playwright/test';
+import {chooseFloor,chooseShelf} from './editor-helpers';
 
-test('habitación limpia, resaltado de mallas, kit con puntos y posiciones persistentes',async({page})=>{
- await page.addInitScript(()=>{if(!localStorage.getItem('room-collection-v1'))localStorage.setItem('room-collection-v1',JSON.stringify({claimed:['shelf','discover','mood'],owned:['cat','robot'],equipped:[],seen:[0,1,2],shelf:true,mood:true}));});
+test('contorno uniforme sin render extra y buscador junto a la estantería',async({page})=>{
  await page.goto('/');const room=page.getByTestId('room-3d');
- await expect(room).toHaveAttribute('data-rendered','true');
- await expect(page.locator('.topbar,.welcome,.bottom-bar,.room-hover')).toHaveCount(0);
- const canvas=room.locator('canvas'),box=(await canvas.boundingBox())!;
- const before=await canvas.screenshot();
- await canvas.dispatchEvent('pointermove',{clientX:box.x+box.width*.5,clientY:box.y+box.height*.5});
+ await expect(room).toHaveAttribute('data-rendered','true');await expect(room).toHaveAttribute('data-motion','idle');
+ await expect(page.locator('.welcome,.room-hover')).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Acercarse a la estantería'})).toBeVisible();
+ const frame=await room.getAttribute('data-frame');
+ const tag=(await page.locator('[data-anchor="shelf"]').boundingBox())!;
+ await room.locator('canvas').dispatchEvent('pointermove',{clientX:tag.x+tag.width/2,clientY:tag.y+tag.height/2});
  await expect(room).toHaveAttribute('data-highlight','shelf');
- expect(await canvas.screenshot()).not.toEqual(before);
- await expect(page.locator('.room-hover')).toHaveCount(0);
- await canvas.dispatchEvent('pointerleave');
- await expect(room).toHaveAttribute('data-highlight','');
+ await expect(page.locator('.interaction-outline')).toBeVisible();
+ expect((await page.locator('.interaction-outline polygon').getAttribute('points'))!.split(' ')).toHaveLength(4);
+ await expect(room).toHaveAttribute('data-frame',frame!);
+ await page.getByRole('button',{name:'Buscar juegos en la biblioteca'}).click();
+ await expect(page.getByRole('textbox',{name:'Buscar en mi biblioteca'})).toBeVisible();
+ await expect(page.locator('.room-frame')).toHaveCSS('opacity','1');
+ await expect(page.locator('.room-frame')).toHaveCSS('filter','none');
+ await page.getByRole('textbox',{name:'Buscar en mi biblioteca'}).fill('Hollow');
+ await expect(page.locator('.game-card')).toHaveCount(1);
+});
+
+test('muebles y figuras: plano, baldas, colisiones, giro, cancelación y persistencia',async({page})=>{
+ await page.addInitScript(()=>{if(!localStorage.getItem('room-collection-v1'))localStorage.setItem('room-collection-v1',JSON.stringify({claimed:['shelf','discover','mood'],owned:['cat'],equipped:[],seen:[0,1,2],shelf:true,mood:true}));});
+ await page.goto('/');const room=page.getByTestId('room-3d');await expect(room).toHaveAttribute('data-rendered','true');
  await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
- await expect(page.getByTestId('points')).toHaveText('100');
- await page.getByRole('button',{name:/^Personalizar/}).click();
- await expect(page.getByRole('button',{name:'Paredes: Azul bruma'})).toHaveCount(0);
- await page.getByRole('button',{name:'Comprar kit · 75 puntos'}).click();
- await expect(page.getByRole('button',{name:'Paredes: Azul bruma'})).toBeVisible();
- await page.keyboard.press('Escape');
- await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
- await expect(page.getByTestId('points')).toHaveText('25');
+ await page.locator('.shop-items article').filter({has:page.getByRole('heading',{name:'Planta de interior'})}).getByRole('button').click();
+ await expect(page.getByTestId('points')).toHaveText('240');
  await page.getByRole('button',{name:'Inventario',exact:true}).click();
- await page.getByLabel('Sitio de Gato de medianoche').selectOption('nightstand');
- await page.getByLabel('Sitio de Pequeño explorador').selectOption('cabinet-left');
- await expect(page.getByLabel('Sitio de Pequeño explorador').locator('option[value="nightstand"]')).toHaveJSProperty('disabled',true);
- await page.getByLabel('Orientación de Gato de medianoche').selectOption('90');
+ await expect(page.getByLabel('Sitio de Gato de medianoche')).toHaveCount(0);
+ await expect(page.locator('.placement-select')).toHaveCount(0);
+ const plant=page.locator('.shop-items article').filter({has:page.getByRole('heading',{name:'Planta de interior'})});
+ await plant.getByRole('button',{name:'Colocar en habitación'}).click();
+ await chooseFloor(page,-1.8,-.8);await expect(page.getByRole('button',{name:'Guardar posición'})).toBeDisabled();
+ await chooseFloor(page,0,.4);await page.getByRole('button',{name:'Girar a la derecha'}).click();
+ await page.getByRole('button',{name:'Guardar posición'}).click();
+ await page.getByRole('button',{name:'Inventario',exact:true}).click();
+ const cat=page.locator('.shop-items article').filter({has:page.getByRole('heading',{name:'Gato de medianoche'})});
+ await cat.getByRole('button',{name:'Colocar en habitación'}).click();
+ await chooseFloor(page,0,.4);await expect(page.getByRole('button',{name:'Guardar posición'})).toBeDisabled();
+ await page.getByRole('button',{name:'Baldas de colección',exact:true}).click();await chooseShelf(page);
+ await page.getByRole('button',{name:'Guardar posición'}).click();
  await page.keyboard.press('Escape');
- await expect(room).toHaveAttribute('data-positions',/"cat":\[-2.74,0.685,-1.91\]/);
- await page.reload();
- await expect(room).toHaveAttribute('data-positions',/"cat":\[-2.74,0.685,-1.91\]/);
+ await expect(room).toHaveAttribute('data-placed',/cat/);await expect(room).toHaveAttribute('data-placed',/plant/);
+ await page.reload();await expect(room).toHaveAttribute('data-positions',/"plant":\[0,0,0.4\]/);
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('room-collection-v1')!));
+ expect(saved.arranged.plant.rotation).toBe(15);expect(saved.arranged.cat.surface).toBe('shelves');
  await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
  await page.getByRole('button',{name:'Inventario',exact:true}).click();
- await expect(page.getByLabel('Sitio de Gato de medianoche')).toHaveValue('nightstand');
- await expect(page.getByLabel('Orientación de Gato de medianoche')).toHaveValue('90');
+ await page.locator('.shop-items article').filter({has:page.getByRole('heading',{name:'Planta de interior'})}).getByRole('button',{name:'Mover objeto'}).click();
+ await chooseFloor(page,1,1);await page.getByRole('button',{name:'Cancelar colocación'}).click();
+ await expect(room).toHaveAttribute('data-positions',/"plant":\[0,0,0.4\]/);
+});
+
+test('la ficha usa una imagen real y conserva una ilustración si no hay red',async({page})=>{
+ await page.route('https://cdn.cloudflare.steamstatic.com/**',async route=>route.fulfill({path:'public/images/artwork-offline.svg',contentType:'image/svg+xml'}));
+ await page.goto('/');await page.getByRole('button',{name:'Buscar juegos en la biblioteca'}).click();
+ await page.getByRole('textbox',{name:'Buscar en mi biblioteca'}).fill('Hollow');
+ await page.getByRole('button',{name:'Ver Hollow Knight',exact:true}).click();
+ const image=page.getByRole('dialog').getByRole('img',{name:'Póster de Hollow Knight'});
+ await expect(image).toBeVisible();expect(await image.evaluate((i:HTMLImageElement)=>i.naturalWidth)).toBeGreaterThan(0);
+ await expect(image).toHaveAttribute('src',/367520\/library_600x900/);
+ await page.getByRole('button',{name:'Cerrar detalles'}).click();
+ await page.unroute('https://cdn.cloudflare.steamstatic.com/**');await page.route('https://cdn.cloudflare.steamstatic.com/**',route=>route.abort());
+ await page.getByRole('button',{name:'Ver Hollow Knight',exact:true}).click();
+ await expect(page.getByRole('dialog').getByRole('img',{name:'Ilustración de reserva para Hollow Knight'})).toBeVisible();
+});
+
+test('las posiciones antiguas del inventario se conservan al migrar al editor',async({page})=>{
+ await page.addInitScript(()=>{if(!localStorage.getItem('room-collection-v1'))localStorage.setItem('room-collection-v1',JSON.stringify({claimed:['shelf','discover','mood'],owned:['cat','robot'],equipped:['cat','robot'],placements:{cat:'nightstand',robot:'cabinet-left'},rotations:{cat:90,robot:180},seen:[0,1,2],shelf:true,mood:true}));});
+ await page.goto('/');const room=page.getByTestId('room-3d');
+ await expect(room).toHaveAttribute('data-positions',/"cat":\[-2.74,0.685,-1.91\]/);
+ await expect(room).toHaveAttribute('data-positions',/"robot":\[-0.6,2.34,-3.22\]/);
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('room-collection-v1')!));
+ expect(saved.arranged.cat.rotation).toBe(90);expect(saved.arranged.robot.rotation).toBe(180);
+ await page.reload();await expect(room).toHaveAttribute('data-placed','cat|robot');
 });

@@ -22,11 +22,11 @@ La compilación comprueba TypeScript y crea `dist/`, incluyendo los modelos. Nin
 
 ## Pantalla principal limpia
 
-La entrada muestra únicamente la habitación. Los muebles interactivos se iluminan al pasar el ratón, sin etiquetas flotantes. Pulsa el ordenador para abrir la biblioteca, los ajustes, las misiones y el inventario. Ctrl+K abre la búsqueda y Escape vuelve atrás. Los controles de teclado solo se muestran al recibir foco.
+La entrada centra la vista en la habitación. Los muebles interactivos muestran un contorno ligero al pasar el ratón. Un botón de búsqueda junto a la estantería abre la biblioteca lateral. Pulsa el ordenador para abrir la biblioteca, los ajustes, las misiones y el inventario. Ctrl+K abre la búsqueda y Escape vuelve atrás. Los controles de teclado de los muebles solo se muestran al recibir foco.
 
 La personalización se desbloquea con un **kit de 75 puntos**, disponible en los ajustes del ordenador y en la tienda. El kit es una compra única; los cambios de ambiente, paredes y sábanas quedan incluidos. Los puntos siguen siendo locales de demostración.
 
-En el inventario, cada objeto tiene selectores de sitio y orientación (0°, 90°, 180°, 270°). Se puede elegir entre once huecos predefinidos en baldas, escritorio, mesilla y armario. Los huecos ocupados se bloquean para evitar superposiciones. Posición y orientación se conservan al recargar; todavía no hay arrastre libre por cualquier superficie.
+El inventario ofrece Colocar o Mover objeto. La cámara pasa a una vista cenital con cuadrícula de 20 cm para el suelo. Las baldas se editan de frente, a pasos de 5 cm. Escritorio, mesilla y armario también admiten colocación en superficie. Los botones de giro avanzan 15°. Hay que confirmar Guardar posición; cancelar descarta la propuesta. Se comprueban límites, muebles existentes y solapamiento entre objetos mediante huellas rectangulares conservadoras. Las posiciones antiguas se migran a coordenadas al cargar. Se venden una planta, un taburete y una mesa auxiliar, además de los objetos anteriores.
 
 ## Qué puedes probar
 
@@ -99,6 +99,20 @@ Al pasar el ratón por los objetos interactivos, un contorno dorado con brillo m
 
 La estantería y los juegos utilizan un contorno SVG proyectado desde sus límites, con cuatro lados rectos y un brillo uniforme. El borde no reproduce las irregularidades de la malla. Cambiar de juego actualiza solo ese contorno: no vuelve a ejecutar el render de la habitación ni el sombreado de contacto.
 
-Los movimientos del ratón sobre el canvas se agrupan una vez por fotograma, conservando la última posición, y se comprueban contra volúmenes precalculados. Los botones de juegos actualizan el contorno directamente. Se evitan recorridos de las mallas y actualizaciones de estado React al mover el ratón; los clics sobre el canvas conservan su comprobación precisa de geometría y oclusión. El ordenador y los trofeos mantienen su contorno basado en silueta 3D, con la selección de mallas precalculada.
+Los movimientos del ratón sobre el canvas se agrupan una vez por fotograma, conservando la última posición, y se comprueban contra volúmenes precalculados. Los botones de juegos actualizan el contorno directamente. Se evitan recorridos de las mallas y actualizaciones de estado React al mover el ratón; los clics sobre el canvas conservan su comprobación precisa de geometría y oclusión. El ordenador y los trofeos también utilizan contornos proyectados de bajo coste. Ningún resaltado necesita ejecutar pases WebGL adicionales.
 
 La prueba de interacción recorre doce juegos con ráfagas de eventos, comprueba que cada contorno cambia y que el contador de renders WebGL permanece igual. Mide por separado el trabajo del manejador; esto no equivale a garantizar una tasa de fotogramas en todos los equipos.
+
+## Biblioteca y pósteres (0.3.0)
+
+El botón junto a la estantería y Ctrl+K abren el panel lateral de búsqueda, filtros y portadas. La habitación permanece visible. Las fichas muestran imágenes de Steam u otras fuentes de arte del juego; se cargan directamente desde sus CDN, sin API ni cuentas. Requieren conexión y pueden dejar de estar disponibles. El entorno de desarrollo bloquea el acceso a esos CDN, por lo que no se ha verificado aquí cada portada externa: las pruebas interceptan una respuesta de imagen para verificar su presentación y prueban el fallo de red. Si la imagen no carga, aparece una ilustración local señalada como reserva. No se usa un rectángulo con el título como sustituto de portada.
+
+Para comprobar la versión descargada, abre el ordenador: debe indicar **0.3.0 · Editor cenital · Contornos ligeros**. Al sustituir un ZIP, detén Vite con Ctrl+C en la terminal anterior, abre una terminal en la carpeta nueva y ejecuta `npm ci` y `npm run dev`. Abre el puerto que indique esa terminal; recarga la página con Ctrl+Shift+R. Abrir otro ZIP no cambia el proyecto que sirve un Vite antiguo.
+
+Vistas del editor y la biblioteca lateral (esta captura simula la falta de conexión a los CDN de portadas):
+
+| Vista cenital | Colocación en baldas |
+| --- | --- |
+| ![Plano cenital con planta](docs/editor-floor.png) | ![Objeto en una balda](docs/editor-shelves.png) |
+
+![Biblioteca lateral sin conexión](docs/library-dock.png)

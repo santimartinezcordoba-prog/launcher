@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { chooseShelf } from './editor-helpers';
 
 test('los clics sobre las mallas abren ordenador y trofeos, y la cámara vuelve a la entrada',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
@@ -49,7 +50,11 @@ test('figura importada se compra, carga como objeto 3D y se retira sin perderla'
   await expect(page.getByTestId('points')).toHaveText('150');
   await page.getByRole('button',{name:'Inventario',exact:true}).click();
   await page.getByRole('button',{name:'Colocar en habitación'}).click();
+  await page.getByRole('button',{name:'Baldas de colección',exact:true}).click();
+  await chooseShelf(page);
+  await page.getByRole('button',{name:'Guardar posición'}).click();
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-placed','figure');
+  await page.getByRole('button',{name:'Inventario',exact:true}).click();
   await page.getByRole('button',{name:'Guardar en inventario'}).click();
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-placed','');
   await expect(page.getByTestId('points')).toHaveText('150');
@@ -75,6 +80,8 @@ test('el contorno de juegos cambia sin volver a renderizar la habitación',async
   await expect(room).toHaveAttribute('data-rendered','true');
   await page.getByRole('button',{name:'Acercarse a la estantería'}).press('Enter');
   await expect(page.locator('.three-game-hit').first()).toBeVisible();
+  await expect(room).toHaveAttribute('data-motion','idle');
+  await expect(room).toHaveAttribute('data-camera','shelf');
   await expect(room).toHaveAttribute('data-motion','idle');
   const result=await page.evaluate(async()=>{
     const host=document.querySelector('[data-testid="room-3d"]')!;
