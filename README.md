@@ -20,6 +20,14 @@ npm run preview
 
 La compilación comprueba TypeScript y crea `dist/`, incluyendo los modelos. Ningún modelo se descarga de una web externa durante el uso de la aplicación.
 
+## Pantalla principal limpia
+
+La entrada muestra únicamente la habitación. Los muebles interactivos se iluminan al pasar el ratón, sin etiquetas flotantes. Pulsa el ordenador para abrir la biblioteca, los ajustes, las misiones y el inventario. Ctrl+K abre la búsqueda y Escape vuelve atrás. Los controles de teclado solo se muestran al recibir foco.
+
+La personalización se desbloquea con un **kit de 75 puntos**, disponible en los ajustes del ordenador y en la tienda. El kit es una compra única; los cambios de ambiente, paredes y sábanas quedan incluidos. Los puntos siguen siendo locales de demostración.
+
+En el inventario, cada objeto tiene selectores de sitio y orientación (0°, 90°, 180°, 270°). Se puede elegir entre once huecos predefinidos en baldas, escritorio, mesilla y armario. Los huecos ocupados se bloquean para evitar superposiciones. Posición y orientación se conservan al recargar; todavía no hay arrastre libre por cualquier superficie.
+
 ## Qué puedes probar
 
 - Pulsar el ordenador o cualquier parte del setup para abrir ajustes, tienda, misiones e inventario.

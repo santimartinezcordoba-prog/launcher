@@ -16,7 +16,7 @@ test('los clics sobre las mallas abren ordenador y trofeos, y la cámara vuelve 
   await expect(page.getByRole('dialog',{name:'Estantería de platinos'})).toBeVisible();
   await page.keyboard.press('Escape');
   const before=await canvas.screenshot();
-  await page.getByRole('button',{name:'Acercarse a la estantería'}).click();
+  await page.getByRole('button',{name:'Acercarse a la estantería'}).press('Enter');
   await expect(page.locator('.three-game-hit').first()).toBeVisible();
   await expect(room).toHaveAttribute('data-motion','idle');
   expect(await canvas.screenshot()).not.toEqual(before);
@@ -33,7 +33,7 @@ test('figura importada se compra, carga como objeto 3D y se retira sin perderla'
   await page.addInitScript(()=>localStorage.setItem('room-collection-v1',JSON.stringify({claimed:['shelf','discover','mood'],owned:[],equipped:[],seen:[0,1,2],shelf:true,mood:true})));
   await page.goto('/');
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-state','ready');
-  await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).click();
+  await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
   const item=page.locator('.shop-items article').filter({has:page.getByRole('heading',{name:'Figura del mago'})});
   await item.getByRole('button',{name:'Comprar · 250 puntos'}).click();
   await expect(page.getByTestId('points')).toHaveText('150');
@@ -51,7 +51,7 @@ test('si falla el GLB, la biblioteca sigue disponible y permite reintentar',asyn
   await expect(page.getByRole('alert')).toContainText('No se pudo abrir la habitación 3D');
   await page.getByRole('button',{name:'Abrir biblioteca',exact:true}).click();
   await expect(page.locator('.game-card')).toHaveCount(60);
-  await page.getByRole('button',{name:'Volver a mi habitación'}).click();
+  await page.keyboard.press('Escape');
   await page.unroute('**/models/room.glb');
   await page.getByRole('button',{name:'Reintentar',exact:true}).click();
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-rendered','true');

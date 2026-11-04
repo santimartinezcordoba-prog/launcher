@@ -1,0 +1,38 @@
+import {test,expect} from '@playwright/test';
+
+test('habitación limpia, resaltado de mallas, kit con puntos y posiciones persistentes',async({page})=>{
+ await page.addInitScript(()=>{if(!localStorage.getItem('room-collection-v1'))localStorage.setItem('room-collection-v1',JSON.stringify({claimed:['shelf','discover','mood'],owned:['cat','robot'],equipped:[],seen:[0,1,2],shelf:true,mood:true}));});
+ await page.goto('/');const room=page.getByTestId('room-3d');
+ await expect(room).toHaveAttribute('data-rendered','true');
+ await expect(page.locator('.topbar,.welcome,.bottom-bar,.room-hover')).toHaveCount(0);
+ const canvas=room.locator('canvas'),box=(await canvas.boundingBox())!;
+ const before=await canvas.screenshot();
+ await canvas.dispatchEvent('pointermove',{clientX:box.x+box.width*.5,clientY:box.y+box.height*.5});
+ await expect(room).toHaveAttribute('data-highlight','shelf');
+ expect(await canvas.screenshot()).not.toEqual(before);
+ await expect(page.locator('.room-hover')).toHaveCount(0);
+ await canvas.dispatchEvent('pointerleave');
+ await expect(room).toHaveAttribute('data-highlight','');
+ await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
+ await expect(page.getByTestId('points')).toHaveText('100');
+ await page.getByRole('button',{name:/^Personalizar/}).click();
+ await expect(page.getByRole('button',{name:'Paredes: Azul bruma'})).toHaveCount(0);
+ await page.getByRole('button',{name:'Comprar kit · 75 puntos'}).click();
+ await expect(page.getByRole('button',{name:'Paredes: Azul bruma'})).toBeVisible();
+ await page.keyboard.press('Escape');
+ await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
+ await expect(page.getByTestId('points')).toHaveText('25');
+ await page.getByRole('button',{name:'Inventario',exact:true}).click();
+ await page.getByLabel('Sitio de Gato de medianoche').selectOption('nightstand');
+ await page.getByLabel('Sitio de Pequeño explorador').selectOption('cabinet-left');
+ await expect(page.getByLabel('Sitio de Pequeño explorador').locator('option[value="nightstand"]')).toHaveJSProperty('disabled',true);
+ await page.getByLabel('Orientación de Gato de medianoche').selectOption('90');
+ await page.keyboard.press('Escape');
+ await expect(room).toHaveAttribute('data-positions',/"cat":\[-2.74,0.685,-1.91\]/);
+ await page.reload();
+ await expect(room).toHaveAttribute('data-positions',/"cat":\[-2.74,0.685,-1.91\]/);
+ await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
+ await page.getByRole('button',{name:'Inventario',exact:true}).click();
+ await expect(page.getByLabel('Sitio de Gato de medianoche')).toHaveValue('nightstand');
+ await expect(page.getByLabel('Orientación de Gato de medianoche')).toHaveValue('90');
+});

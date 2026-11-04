@@ -1,13 +1,13 @@
 import { test, expect } from '@playwright/test';
 test('misión, compra sin duplicados, inventario y persistencia',async({page})=>{
  await page.goto('/');
- await page.getByRole('button',{name:'Ajustes',exact:true}).click();
+ await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
  await expect(page.getByTestId('points')).toHaveText('0');
  await expect(page.getByRole('button',{name:'Comprar · 100 puntos'})).toBeDisabled();
  await page.keyboard.press('Escape');
- await page.getByRole('button',{name:'Acercarse a la estantería'}).click();
+ await page.getByRole('button',{name:'Acercarse a la estantería'}).press('Enter');
  await page.keyboard.press('Escape');
- await page.getByRole('button',{name:'Ajustes',exact:true}).click();
+ await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
  await page.getByRole('button',{name:'Misiones',exact:true}).click();
  await page.getByRole('button',{name:'Reclamar',exact:true}).click();
  await expect(page.getByTestId('points')).toHaveText('100');
@@ -22,7 +22,7 @@ test('misión, compra sin duplicados, inventario y persistencia',async({page})=>
  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-placed','cat');
  await page.reload();
  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-placed','cat');
- await page.getByRole('button',{name:'Ajustes',exact:true}).click();
+ await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
  await expect(page.getByTestId('points')).toHaveText('0');
  await page.getByRole('button',{name:'Inventario',exact:true}).click();
  await page.getByRole('button',{name:'Guardar en inventario'}).click();
@@ -34,7 +34,7 @@ test('estantería de platinos enlaza con trofeos de la ficha',async({page})=>{
  await page.goto('/');
  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-state','ready');
  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-placed','');
- await page.getByRole('button',{name:'Ver estantería de platinos'}).click();
+ await page.getByRole('button',{name:'Ver estantería de platinos'}).press('Enter');
  await expect(page.getByRole('dialog',{name:'Estantería de platinos'})).toBeVisible();
  await page.getByLabel('Buscar platinos').fill('Hollow');
  await page.getByRole('button',{name:/Hollow Knight/}).click();

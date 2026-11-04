@@ -5,11 +5,12 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { type Game } from './games';
 import './room3d.css';
+import { placementSpots } from './placement';
 
 export type RoomPreferences = { mood: 'warm'|'night'|'day'; wall: string; bedding: string; reduced: boolean };
 type Props = {
   view: 'room'|'shelf'|'library'; ranked: Game[]; favorites: number[];
-  prefs: RoomPreferences; equipped: string[]; blocked: boolean;
+  prefs: RoomPreferences; equipped: string[]; placements:Record<string,string>; rotations:Record<string,number>; blocked: boolean;
   onShelf: () => void; onComputer: () => void; onTrophies: () => void;
   onGame: (game: Game) => void; onLibrary: () => void;
 };
@@ -83,6 +84,7 @@ class RoomEngine {
   bedding: THREE.MeshStandardMaterial[]=[];
   originalColors=new Map<THREE.Material,THREE.Color>();
   decorations = new Map<string,THREE.Group>();
+  highlighted=new Map<THREE.Mesh,THREE.Material|THREE.Material[]>();highlightKey='';
   disposed=false; dirty=true; ready=false; frame=0; renderedFrames=0; transitionStart=0;
   startPosition=new THREE.Vector3();startQuaternion=new THREE.Quaternion();
   stateKey=''; decorationKey=''; currentView='';
@@ -117,7 +119,7 @@ class RoomEngine {
     this.renderer.domElement.addEventListener('webglcontextlost',this.contextLost);
     this.loader.load('./models/room.glb',gltf=>{
       if(this.disposed){disposeTree(gltf.scene);return;}
-      this.root=gltf.scene;this.scene.add(this.root);this.root.updateMatrixWorld(true);
+      this.root=gltf.scene;this.scene.add(this.root);this.root.traverse(o=>{const name=normalName(o.name);if(name.includes('lampara')||name.startsWith('pantalla lino')){o.position.x-=.10;o.position.z-=.11;}});this.root.updateMatrixWorld(true);
       const source=gltf.cameras[0] as THREE.PerspectiveCamera|undefined;
       if(!source){this.state('error');return;}
       source.getWorldPosition(this.roomPosition);source.getWorldQuaternion(this.roomQuaternion);
@@ -204,10 +206,11 @@ class RoomEngine {
       this.host.dataset.wall=p.prefs.wall;this.host.dataset.bedding=p.prefs.bedding;this.host.dataset.mood=p.prefs.mood;
       this.dirty=true;
     }
-    const decoKey=p.equipped.join('|');
+    if(p.blocked)this.setHighlight();
+    const decoKey=JSON.stringify([p.equipped,p.placements,p.rotations]);
     if(decoKey!==this.decorationKey){
       this.decorationKey=decoKey;
-      for(const [id,object] of this.decorations)object.visible=p.equipped.includes(id);
+      for(const [id,object] of this.decorations){object.visible=p.equipped.includes(id);this.placeObject(id,object);}
       for(const [index,id] of ['cat','crystal','robot','duck','figure'].entries()){
         if(!p.equipped.includes(id)||this.decorations.has(id))continue;
         if(id==='duck'||id==='figure'){
@@ -216,17 +219,38 @@ class RoomEngine {
             if(this.disposed){disposeTree(gltf.scene);return;}
             const box=new THREE.Box3().setFromObject(gltf.scene),center=box.getCenter(new THREE.Vector3());
             const pivot=new THREE.Group();gltf.scene.position.sub(new THREE.Vector3(center.x,box.min.y,center.z));pivot.add(gltf.scene);
-            pivot.position.set(3.11,2.03,-(id==='duck'?1.33:2.10));pivot.visible=this.read().equipped.includes(id);
+            this.placeObject(id,pivot);pivot.visible=this.read().equipped.includes(id);
             this.scene.add(pivot);this.decorations.set(id,pivot);this.dirty=true;
           },undefined,()=>{if(!this.disposed){this.decorations.delete(id);this.hover('No se pudo cargar el objeto. Retíralo y vuelve a colocarlo.');}});
         }else{
-          const object=proceduralCollectible(id);object.position.set(3.11,2.46,-(1.15+index*.4));this.scene.add(object);this.decorations.set(id,object);
+          const object=proceduralCollectible(id);object.userData.baseRotation=object.rotation.y;this.placeObject(id,object);this.scene.add(object);this.decorations.set(id,object);
         }
       }
       this.host.dataset.equipped=decoKey;this.dirty=true;
     }
   }
 
+  placeObject(id:string,object:THREE.Group){
+    const p=this.read();const index=p.equipped.indexOf(id);
+    const spot=placementSpots.find(s=>s.id===p.placements[id])??placementSpots[Math.max(0,index)];
+    object.position.set(...spot.position);object.rotation.y=(object.userData.baseRotation??0)+(p.rotations[id]??0)*Math.PI/180;
+  }
+  setHighlight(hit?:Hit){
+    const kind=hit?.kind==='game'&&this.read().view==='room'?'shelf':hit?.kind;
+    const key=kind?kind+(kind==='game'?hit?.slot:''):'';if(key===this.highlightKey)return;
+    for(const [mesh,original] of this.highlighted){for(const m of Array.isArray(mesh.material)?mesh.material:[mesh.material])m.dispose();mesh.material=original;}
+    this.highlighted.clear();this.highlightKey=key;this.host.dataset.highlight=kind??'';
+    if(kind)this.scene.traverse(node=>{
+      if(!(node instanceof THREE.Mesh)||!node.visible)return;
+      let current:THREE.Object3D|null=node,match=false;
+      while(current){const h=current.userData.hit as Hit|undefined;if(h&&(h.kind===kind||(kind==='shelf'&&h.kind==='game'))&&(kind!=='game'||h.slot===hit?.slot))match=true;current=current.parent;}
+      if(!match)return;
+      const original=node.material;this.highlighted.set(node,original);
+      const brighten=(m:THREE.Material)=>{const clone=m.clone();if(clone instanceof THREE.MeshStandardMaterial){clone.emissive.set('#e6bd70');clone.emissiveIntensity=.32;}return clone;};
+      node.material=Array.isArray(original)?original.map(brighten):brighten(original);
+    });
+    this.dirty=true;
+  }
   resize(){
     const {width,height}=this.host.getBoundingClientRect();if(!width||!height)return;
     this.renderer.setSize(width,height);this.camera.aspect=width/height;this.camera.updateProjectionMatrix();this.dirty=true;
@@ -253,11 +277,11 @@ class RoomEngine {
     else if(hit.kind==='shelf')p.onShelf();else if(hit.kind==='computer')p.onComputer();else p.onTrophies();
   };
   move=(event:PointerEvent)=>{
-    const hit=this.hit(event);const p=this.read();
+    const hit=this.hit(event);const p=this.read();this.setHighlight(hit);
     this.renderer.domElement.style.cursor=hit?'pointer':'default';
     this.hover(!hit?'':hit.kind==='game'?(p.view==='shelf'?p.ranked[hit.slot!].title:'Explorar estantería'):hit.kind==='computer'?'Abrir mi ordenador':hit.kind==='trophies'?'Ver mis platinos':'Explorar estantería');
   };
-  leave=()=>this.hover('');
+  leave=()=>{this.hover('');this.setHighlight();};
   contextLost=(event:Event)=>{event.preventDefault();this.ready=false;this.state('error');};
 
   project(element:HTMLElement,position:THREE.Vector3){
@@ -298,13 +322,14 @@ class RoomEngine {
       if(this.dirty&&!document.hidden){
         this.camera.updateMatrixWorld();this.renderer.render(this.scene,this.camera);this.anchors();this.dirty=false;
         this.host.dataset.rendered='true';this.host.dataset.slots=String(this.slots.length);this.host.dataset.frame=String(++this.renderedFrames);
+        this.host.dataset.positions=JSON.stringify(Object.fromEntries([...this.decorations].filter(([,o])=>o.visible).map(([id,o])=>[id,o.position.toArray()])));
         this.host.dataset.placed=[...this.decorations.entries()].filter(([,o])=>o.visible&&o.children.length>0).map(([id])=>id).join('|');
       }
     }
     this.frame=requestAnimationFrame(this.tick);
   };
   dispose(){
-    this.disposed=true;cancelAnimationFrame(this.frame);this.resizeObserver.disconnect();
+    this.setHighlight();this.disposed=true;cancelAnimationFrame(this.frame);this.resizeObserver.disconnect();
     const c=this.renderer.domElement;c.removeEventListener('click',this.click);c.removeEventListener('pointermove',this.move);c.removeEventListener('pointerleave',this.leave);c.removeEventListener('webglcontextlost',this.contextLost);
     disposeTree(this.scene);this.environment.dispose();this.renderer.dispose();this.renderer.forceContextLoss();c.remove();
   }
@@ -320,19 +345,19 @@ export function Room3D(props:Props){
   },[retry]);
   useEffect(()=>{if(engine.current)engine.current.dirty=true;},[status,props.view]);
   useEffect(()=>{if(props.blocked)setHover('');},[props.blocked]);
-  useEffect(()=>engine.current?.apply(),[props.ranked,props.favorites,props.prefs,props.equipped]);
+  useEffect(()=>engine.current?.apply(),[props.ranked,props.favorites,props.prefs,props.equipped,props.placements,props.rotations,props.blocked]);
   return <div className="room-frame" inert={props.view==='library'} aria-hidden={props.view==='library'}>
     <div className="scene three-scene">
       <div ref={host} className="three-canvas" data-testid="room-3d" data-state={status}/>
       {status==='loading'&&<div className="room-load" role="status"><span className="load-orbit"/><strong>Preparando tu habitación</strong><p>Cargando los modelos 3D…</p></div>}
       {status==='error'&&<div className="room-load" role="alert"><strong>No se pudo abrir la habitación 3D</strong><p>Comprueba la aceleración gráfica del navegador y vuelve a intentarlo.</p><button className="primary-button" onClick={()=>setRetry(v=>v+1)}>Reintentar</button><button className="quiet-button" onClick={props.onLibrary}>Abrir biblioteca</button></div>}
-      {status==='ready'&&props.view==='room'&&<nav className="room-object-actions" aria-label="Objetos de la habitación">
+      {status==='ready'&&props.view==='room'&&<nav className="room-object-actions keyboard-object-actions" aria-label="Objetos de la habitación">
         <button data-anchor="shelf" aria-label="Acercarse a la estantería" onClick={props.onShelf}>Explorar estantería <span>↗</span></button>
         <button data-anchor="computer" aria-label="Abrir ajustes desde el ordenador" onClick={props.onComputer}>Mi ordenador <span>↗</span></button>
         <button data-anchor="trophies" aria-label="Ver estantería de platinos" onClick={props.onTrophies}>Mis platinos <span>↗</span></button>
       </nav>}
       {status==='ready'&&props.view==='shelf'&&<nav className="three-game-actions" aria-label="Juegos de la estantería">{props.ranked.map((g,i)=><button key={i} className="case three-game-hit" data-slot={i} data-game-id={g.id} aria-label={`Ver ${g.title}`} title={g.title} onClick={()=>props.onGame(g)}><span className="sr-only">{g.title}</span></button>)}</nav>}
-      {hover&&status==='ready'&&!props.blocked&&<p className="room-hover" role="status">{hover}</p>}
+
       <div className="equipped-status sr-only" aria-label="Objetos colocados">{props.equipped.map(id=><span className={`placed-${id}`} key={id}>{id}</span>)}</div>
     </div>
   </div>;

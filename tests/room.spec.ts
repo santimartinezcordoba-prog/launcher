@@ -3,11 +3,11 @@ import { test, expect } from '@playwright/test';
 test('habitación: 50 lomos, acercamiento, ficha y vuelta con Escape', async ({page})=>{
   const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
   await page.goto('/');
-  await expect(page.getByRole('heading',{name:/Todos tus mundos/})).toBeVisible();
+  await expect(page.locator('main')).toHaveClass(/view-room/);
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-state','ready');
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-slots','50');
-  await page.getByRole('button',{name:'Acercarse a la estantería'}).click();
-  await expect(page.getByRole('heading',{name:'Historias por vivir.'})).toBeVisible();
+  await page.getByRole('button',{name:'Acercarse a la estantería'}).press('Enter');
+  await expect(page.locator('main')).toHaveClass(/view-shelf/);
   await expect(page.locator('.case')).toHaveCount(50);
   await page.locator('.case').first().click();
   await expect(page.getByRole('dialog')).toBeVisible();
@@ -15,7 +15,7 @@ test('habitación: 50 lomos, acercamiento, ficha y vuelta con Escape', async ({p
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('heading',{name:/Todos tus mundos/})).toBeVisible();
+  await expect(page.locator('main')).toHaveClass(/view-room/);
   await expect(page.getByRole('button',{name:'Acercarse a la estantería'})).toBeVisible();
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-motion','idle');
   await page.mouse.move(10, 450);
@@ -25,6 +25,8 @@ test('habitación: 50 lomos, acercamiento, ficha y vuelta con Escape', async ({p
 });
 test('buscador, filtros por tienda y género, estado vacío y restablecer',async({page})=>{
   await page.goto('/');
+  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-rendered','true');
+  await page.keyboard.press('Control+k');
   await page.getByRole('textbox',{name:'Buscar en mi biblioteca'}).fill('Hollow');
   await expect(page.locator('.game-card')).toHaveCount(1);
   await page.getByLabel('Tienda',{exact:true}).selectOption('Epic Games');
@@ -38,18 +40,24 @@ test('buscador, filtros por tienda y género, estado vacío y restablecer',async
 });
 test('favoritos persisten y se fijan en la estantería',async({page})=>{
   await page.goto('/');
+  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-rendered','true');
+  await page.keyboard.press('Control+k');
   await page.getByRole('textbox',{name:'Buscar en mi biblioteca'}).fill('Unpacking');
   await page.getByRole('button',{name:'Añadir a favoritos: Unpacking'}).click();
   await page.reload();
+  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-rendered','true');
+  await page.keyboard.press('Control+k');
   await page.getByRole('navigation',{name:'Filtrar biblioteca'}).getByRole('button',{name:'Favoritos'}).click();
   await expect(page.locator('.game-card')).toHaveCount(5);
   await expect(page.getByRole('button',{name:'Quitar de favoritos: Unpacking'})).toHaveAttribute('aria-pressed','true');
-  await page.getByRole('button',{name:'Volver a mi habitación'}).click();
-  await page.getByRole('button',{name:'Acercarse a la estantería'}).click();
+  await page.keyboard.press('Escape');
+  await page.getByRole('button',{name:'Acercarse a la estantería'}).press('Enter');
   await expect(page.locator('.case[aria-label="Ver Unpacking"]')).toBeVisible();
 });
 test('juego sin instalar muestra Descargar y explica el estado de demostración',async({page})=>{
   await page.goto('/');
+  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-rendered','true');
+  await page.keyboard.press('Control+k');
   await page.getByRole('textbox',{name:'Buscar en mi biblioteca'}).fill('Red Dead');
   await page.getByRole('button',{name:'Ver Red Dead Redemption 2',exact:true}).click();
   await page.getByRole('button',{name:'Descargar',exact:true}).click();
@@ -57,12 +65,14 @@ test('juego sin instalar muestra Descargar y explica el estado de demostración'
   await expect(page.getByRole('dialog')).toContainText('Las tiendas todavía no están conectadas');
 });
 test('ordenador, opciones de accesibilidad y personalización se conservan',async({page})=>{
+  await page.addInitScript(()=>localStorage.setItem('room-collection-v1',JSON.stringify({claimed:['shelf'],owned:['customize'],equipped:[],seen:[],shelf:true,mood:false})));
   await page.goto('/');
-  await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).click();
+  await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
   await expect(page.getByRole('dialog')).toContainText('Riot Games');
   await page.getByRole('checkbox',{name:/Reducir animaciones/}).check();
   await page.keyboard.press('Escape');
-  await page.getByRole('button',{name:'Personalizar',exact:true}).click();
+  await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
+  await page.getByRole('button',{name:/^Personalizar/}).click();
   await page.getByRole('button',{name:/Noche Solo una partida/}).click();
   await page.getByRole('button',{name:'Paredes: Azul bruma'}).click();
   await page.getByRole('button',{name:'Sábanas: Terracota'}).click();
@@ -72,14 +82,16 @@ test('ordenador, opciones de accesibilidad y personalización se conservan',asyn
   await expect(page.locator('main')).toHaveClass(/reduce-motion/);
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-wall','#4a637d');
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-bedding','#985a68');
-  await page.getByRole('button',{name:'Personalizar',exact:true}).click();
+  await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
+  await page.getByRole('button',{name:/^Personalizar/}).click();
   await page.getByRole('button',{name:'Restaurar habitación original'}).click();
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-wall','original');
 });
 test('ventana compacta: biblioteca y diálogo utilizables',async({page})=>{
   await page.setViewportSize({width:1024,height:650});
   await page.goto('/');
-  await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('button',{name:/Biblioteca/}).click();
+  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-rendered','true');
+  await page.keyboard.press('Control+k');
   await expect(page.locator('.game-card')).toHaveCount(60);
   await page.locator('.scene').evaluate(async el=>{await Promise.all(el.getAnimations().map(a=>a.finished.catch(()=>{})));});
   await page.screenshot({path:'test-results/library.png'});
