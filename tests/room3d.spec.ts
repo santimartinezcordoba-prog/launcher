@@ -12,7 +12,16 @@ test('los clics sobre las mallas abren ordenador y trofeos, y la cámara vuelve 
   await canvas.dispatchEvent('click',{clientX:computer.x+computer.width/2,clientY:computer.y+computer.height/2});
   await expect(page.getByRole('dialog',{name:'Ajustes del ordenador'})).toBeVisible();
   await page.keyboard.press('Escape');
-  await canvas.dispatchEvent('click',{clientX:bounds.x+bounds.width*.505,clientY:bounds.y+bounds.height*.38});
+  // Find the cup row through the same raycasting that drives the visible highlight.
+  const trophyTag=(await page.locator('[data-anchor="trophies"]').boundingBox())!;
+  const trophyX=trophyTag.x+trophyTag.width/2;let trophyY=0;
+  for(const offset of [50,60,70,80,90]){
+    const y=trophyTag.y+trophyTag.height/2+offset;
+    await canvas.dispatchEvent('pointermove',{clientX:trophyX,clientY:y});
+    if(await room.getAttribute('data-highlight')==='trophies'){trophyY=y;break;}
+  }
+  expect(trophyY).toBeGreaterThan(0);
+  await canvas.dispatchEvent('click',{clientX:trophyX,clientY:trophyY});
   await expect(page.getByRole('dialog',{name:'Estantería de platinos'})).toBeVisible();
   await page.keyboard.press('Escape');
   const before=await canvas.screenshot();
