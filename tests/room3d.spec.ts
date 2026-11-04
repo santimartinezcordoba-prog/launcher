@@ -50,7 +50,7 @@ test('figura importada se compra, carga como objeto 3D y se retira sin perderla'
   await expect(page.getByTestId('points')).toHaveText('150');
   await page.getByRole('button',{name:'Inventario',exact:true}).click();
   await page.getByRole('button',{name:'Colocar en habitación'}).click();
-  await page.getByRole('button',{name:'Baldas de colección',exact:true}).click();
+  await page.getByRole('navigation',{name:'Superficies de colocación'}).getByRole('button',{name:'Baldas de colección',exact:true}).click();
   await chooseShelf(page);
   await page.getByRole('button',{name:'Guardar posición'}).click();
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-placed','figure');

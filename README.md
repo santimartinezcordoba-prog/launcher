@@ -22,7 +22,7 @@ La compilación comprueba TypeScript y crea `dist/`, incluyendo los modelos. Nin
 
 ## Pantalla principal limpia
 
-La entrada centra la vista en la habitación. Los muebles interactivos muestran un contorno ligero al pasar el ratón. Un botón de búsqueda junto a la estantería abre la biblioteca lateral. Pulsa el ordenador para abrir la biblioteca, los ajustes, las misiones y el inventario. Ctrl+K abre la búsqueda y Escape vuelve atrás. Los controles de teclado de los muebles solo se muestran al recibir foco.
+La entrada centra la vista en la habitación. Los muebles interactivos muestran un contorno ligero al pasar el ratón. Al acercarte a la estantería aparece un botón Biblioteca, que abre la galería completa. La vista general no muestra ese botón. Pulsa el ordenador para abrir la biblioteca, los ajustes, las misiones y el inventario. Ctrl+K abre la búsqueda y Escape vuelve atrás. Los controles de teclado de los muebles solo se muestran al recibir foco.
 
 La personalización se desbloquea con un **kit de 75 puntos**, disponible en los ajustes del ordenador y en la tienda. El kit es una compra única; los cambios de ambiente, paredes y sábanas quedan incluidos. Los puntos siguen siendo locales de demostración.
 
@@ -103,11 +103,11 @@ Los movimientos del ratón sobre el canvas se agrupan una vez por fotograma, con
 
 La prueba de interacción recorre doce juegos con ráfagas de eventos, comprueba que cada contorno cambia y que el contador de renders WebGL permanece igual. Mide por separado el trabajo del manejador; esto no equivale a garantizar una tasa de fotogramas en todos los equipos.
 
-## Biblioteca y pósteres (0.3.0)
+## Biblioteca y pósteres (0.3.1)
 
-El botón junto a la estantería y Ctrl+K abren el panel lateral de búsqueda, filtros y portadas. La habitación permanece visible. Las fichas muestran imágenes de Steam u otras fuentes de arte del juego; se cargan directamente desde sus CDN, sin API ni cuentas. Requieren conexión y pueden dejar de estar disponibles. El entorno de desarrollo bloquea el acceso a esos CDN, por lo que no se ha verificado aquí cada portada externa: las pruebas interceptan una respuesta de imagen para verificar su presentación y prueban el fallo de red. Si la imagen no carga, aparece una ilustración local señalada como reserva. No se usa un rectángulo con el título como sustituto de portada.
+El botón Biblioteca junto a la estantería y Ctrl+K abren la biblioteca amplia con búsqueda, filtros y portadas. Las fichas muestran imágenes de Steam u otras fuentes de arte del juego; se cargan directamente desde sus CDN, sin API ni cuentas. Requieren conexión y pueden dejar de estar disponibles. El entorno de desarrollo bloquea el acceso a esos CDN, por lo que no se ha verificado aquí cada portada externa: las pruebas interceptan una respuesta de imagen para verificar su presentación y prueban el fallo de red. Si la imagen no carga, aparece una ilustración local señalada como reserva. No se usa un rectángulo con el título como sustituto de portada.
 
-Para comprobar la versión descargada, abre el ordenador: debe indicar **0.3.0 · Editor cenital · Contornos ligeros**. Al sustituir un ZIP, detén Vite con Ctrl+C en la terminal anterior, abre una terminal en la carpeta nueva y ejecuta `npm ci` y `npm run dev`. Abre el puerto que indique esa terminal; recarga la página con Ctrl+Shift+R. Abrir otro ZIP no cambia el proyecto que sirve un Vite antiguo.
+Para comprobar la versión descargada, abre el ordenador: debe indicar **0.3.1 · Arrastre y vistas de superficies**. Al sustituir un ZIP, detén Vite con Ctrl+C en la terminal anterior, abre una terminal en la carpeta nueva y ejecuta `npm ci` y `npm run dev`. Abre el puerto que indique esa terminal; recarga la página con Ctrl+Shift+R. Abrir otro ZIP no cambia el proyecto que sirve un Vite antiguo.
 
 Vistas del editor y la biblioteca lateral (esta captura simula la falta de conexión a los CDN de portadas):
 
@@ -115,4 +115,20 @@ Vistas del editor y la biblioteca lateral (esta captura simula la falta de conex
 | --- | --- |
 | ![Plano cenital con planta](docs/editor-floor.png) | ![Objeto en una balda](docs/editor-shelves.png) |
 
-![Biblioteca lateral sin conexión](docs/library-dock.png)
+[Referencia del anterior panel lateral](docs/library-dock.png)
+
+## Arrastre y superficies (0.3.1)
+
+Mantén pulsado el botón principal sobre la cuadrícula y arrastra para mover la previsualización. Se mantiene la colocación con un clic. Los movimientos se agrupan por fotograma y se aplican directamente al objeto 3D; React recibe la posición final al soltar. Durante el arrastre se omiten los efectos de posprocesado; al soltar se recuperan las sombras y el render completo. Un borde rojo señala propuestas que no se pueden guardar. La captura del puntero mantiene el arrastre al pasar sobre las etiquetas o salir del canvas, y la cancelación del gesto restaura la propuesta anterior.
+
+Las baldas, la mesilla, el escritorio y la parte superior de la estantería tienen cámaras cercanas para decorar sus superficies. Las etiquetas flotantes solo aparecen en el plano cenital. También se puede decorar la mesa auxiliar y el taburete comprados una vez colocados. Sus adornos acompañan su movimiento y giro, se conservan al recargar y se guardan en el inventario si se retira el mueble que los sostiene. La posición sigue requiriendo Guardar posición; cancelar el editor descarta los cambios.
+
+Vistas de la versión 0.3.1 (las portadas de esta captura usan la reserva sin conexión):
+
+| Sobre la estantería | Mesa comprada |
+| --- | --- |
+| ![Colocación sobre la estantería](docs/front-cabinet.png) | ![Adorno sobre una mesa](docs/front-table.png) |
+
+![Biblioteca amplia](docs/library-wide.png)
+
+![Zona libre del escritorio](docs/front-desk.png)

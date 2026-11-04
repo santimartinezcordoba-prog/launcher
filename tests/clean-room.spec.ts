@@ -13,10 +13,11 @@ test('contorno uniforme sin render extra y buscador junto a la estantería',asyn
  await expect(page.locator('.interaction-outline')).toBeVisible();
  expect((await page.locator('.interaction-outline polygon').getAttribute('points'))!.split(' ')).toHaveLength(4);
  await expect(room).toHaveAttribute('data-frame',frame!);
- await page.getByRole('button',{name:'Buscar juegos en la biblioteca'}).click();
+ await page.getByRole('button',{name:'Acercarse a la estantería'}).press('Enter');
+ await page.getByRole('button',{name:'Abrir biblioteca',exact:true}).click();
  await expect(page.getByRole('textbox',{name:'Buscar en mi biblioteca'})).toBeVisible();
- await expect(page.locator('.room-frame')).toHaveCSS('opacity','1');
- await expect(page.locator('.room-frame')).toHaveCSS('filter','none');
+ const width=await page.locator('.library').evaluate(el=>el.getBoundingClientRect().width);
+ expect(width).toBeGreaterThan(900);
  await page.getByRole('textbox',{name:'Buscar en mi biblioteca'}).fill('Hollow');
  await expect(page.locator('.game-card')).toHaveCount(1);
 });
@@ -39,7 +40,7 @@ test('muebles y figuras: plano, baldas, colisiones, giro, cancelación y persist
  const cat=page.locator('.shop-items article').filter({has:page.getByRole('heading',{name:'Gato de medianoche'})});
  await cat.getByRole('button',{name:'Colocar en habitación'}).click();
  await chooseFloor(page,0,.4);await expect(page.getByRole('button',{name:'Guardar posición'})).toBeDisabled();
- await page.getByRole('button',{name:'Baldas de colección',exact:true}).click();await chooseShelf(page);
+ await page.getByRole('navigation',{name:'Superficies de colocación'}).getByRole('button',{name:'Baldas de colección',exact:true}).click();await chooseShelf(page);
  await page.getByRole('button',{name:'Guardar posición'}).click();
  await page.keyboard.press('Escape');
  await expect(room).toHaveAttribute('data-placed',/cat/);await expect(room).toHaveAttribute('data-placed',/plant/);
@@ -55,7 +56,7 @@ test('muebles y figuras: plano, baldas, colisiones, giro, cancelación y persist
 
 test('la ficha usa una imagen real y conserva una ilustración si no hay red',async({page})=>{
  await page.route('https://cdn.cloudflare.steamstatic.com/**',async route=>route.fulfill({path:'public/images/artwork-offline.svg',contentType:'image/svg+xml'}));
- await page.goto('/');await page.getByRole('button',{name:'Buscar juegos en la biblioteca'}).click();
+ await page.goto('/');await expect(page.getByTestId('room-3d')).toHaveAttribute('data-rendered','true');await page.keyboard.press('Control+k');
  await page.getByRole('textbox',{name:'Buscar en mi biblioteca'}).fill('Hollow');
  await page.getByRole('button',{name:'Ver Hollow Knight',exact:true}).click();
  const image=page.getByRole('dialog').getByRole('img',{name:'Póster de Hollow Knight'});
@@ -68,10 +69,10 @@ test('la ficha usa una imagen real y conserva una ilustración si no hay red',as
 });
 
 test('las posiciones antiguas del inventario se conservan al migrar al editor',async({page})=>{
- await page.addInitScript(()=>{if(!localStorage.getItem('room-collection-v1'))localStorage.setItem('room-collection-v1',JSON.stringify({claimed:['shelf','discover','mood'],owned:['cat','robot'],equipped:['cat','robot'],placements:{cat:'nightstand',robot:'cabinet-left'},rotations:{cat:90,robot:180},seen:[0,1,2],shelf:true,mood:true}));});
+ await page.addInitScript(()=>{if(!localStorage.getItem('room-collection-v1'))localStorage.setItem('room-collection-v1',JSON.stringify({claimed:['shelf','discover','mood'],owned:['cat','robot'],equipped:['cat','robot'],placements:{cat:'nightstand',robot:'desk-left'},rotations:{cat:90,robot:180},seen:[0,1,2],shelf:true,mood:true}));});
  await page.goto('/');const room=page.getByTestId('room-3d');
  await expect(room).toHaveAttribute('data-positions',/"cat":\[-2.74,0.685,-1.91\]/);
- await expect(room).toHaveAttribute('data-positions',/"robot":\[-0.6,2.34,-3.22\]/);
+ await expect(room).toHaveAttribute('data-positions',/"robot":\[2.5,0.82,-0.94\]/);
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('room-collection-v1')!));
  expect(saved.arranged.cat.rotation).toBe(90);expect(saved.arranged.robot.rotation).toBe(180);
  await page.reload();await expect(room).toHaveAttribute('data-placed','cat|robot');

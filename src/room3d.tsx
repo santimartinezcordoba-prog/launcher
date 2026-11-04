@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { BookOpen } from 'lucide-react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -10,14 +11,14 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomAppearance } from './room-appearance';
-import { furniture, snapPlacement, type Arrangement, type Surface } from './arrangement';
+import { furniture, snapPlacement, surfaceArea, moveSupportedItems, placementError, surfaceNames, type Arrangement, type Surface } from './arrangement';
 import type { EditSession } from './room-editor';
 
 export type RoomPreferences = { mood: 'warm'|'night'|'day'; wall: string; bedding: string; reduced: boolean };
 type Props = {
   view: 'room'|'shelf'|'library'; ranked: Game[]; favorites: number[];
   prefs: RoomPreferences; equipped: string[]; arranged:Record<string,Arrangement>; editor:EditSession|null; blocked: boolean;
-  onPick:(position:Arrangement)=>void;onSurface:(surface:Surface)=>void;
+  onPick:(position:Arrangement|undefined)=>void;onSurface:(surface:Surface)=>void;
   onShelf: () => void; onComputer: () => void; onTrophies: () => void;
   onGame: (game: Game) => void; onLibrary: () => void;
 };
@@ -104,6 +105,9 @@ class RoomEngine {
   originalColors=new Map<THREE.Material,THREE.Color>();
   decorations = new Map<string,THREE.Group>();
   highlightKey='';
+  drag?:{pointerId:number;surface:Surface;draft:Arrangement;origin?:Arrangement};
+  pendingDrag?:{clientX:number;clientY:number};
+  suppressClick=false;
   editorGrid=document.createElementNS('http://www.w3.org/2000/svg','svg');
   hiddenArchitecture=new Map<THREE.Object3D,boolean>();
   highlightOverlay=document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -147,6 +151,10 @@ class RoomEngine {
     this.appearance=new RoomAppearance(this.scene,this.renderer,this.hemisphere,this.sun);
     this.resizeObserver=new ResizeObserver(()=>this.resize());this.resizeObserver.observe(host);this.resize();
     this.renderer.domElement.addEventListener('click',this.click);
+    this.renderer.domElement.addEventListener('pointerdown',this.down);
+    this.renderer.domElement.addEventListener('pointerup',this.up);
+    this.renderer.domElement.addEventListener('pointercancel',this.cancelDrag);
+    this.renderer.domElement.addEventListener('lostpointercapture',this.cancelDrag);
     this.renderer.domElement.addEventListener('pointermove',this.move);
     this.renderer.domElement.addEventListener('pointerleave',this.leave);
     this.renderer.domElement.addEventListener('webglcontextlost',this.contextLost);
@@ -295,7 +303,9 @@ class RoomEngine {
   }
 
   placeObject(id:string,object:THREE.Group){
-    const p=this.read();const position=p.editor?.id===id&&p.editor.draft?p.editor.draft:p.arranged[id];
+    const p=this.read(),draft=this.drag?.draft??p.editor?.draft;
+    const positions=p.editor&&draft?moveSupportedItems(p.editor.id,draft,p.arranged):p.arranged;
+    const position=positions[id];
     if(!position)return;
     object.position.set(position.x,position.y,position.z);object.rotation.y=(object.userData.baseRotation??0)+position.rotation*Math.PI/180;
   }
@@ -369,24 +379,52 @@ class RoomEngine {
     });
     this.renderer.shadowMap.needsUpdate=true;
   }
-  editorClick(event:MouseEvent){
+  editorPosition(event:{clientX:number;clientY:number},selectSurface=true):Arrangement|undefined{
     const edit=this.read().editor;if(!edit)return;
     const rect=this.renderer.domElement.getBoundingClientRect();
     this.pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1);this.raycaster.setFromCamera(this.pointer,this.camera);
     const point=new THREE.Vector3(),side=edit.surface==='shelves';
-    const height={floor:0,desk:.82,nightstand:.685,cabinet:2.34,shelves:0}[edit.surface];
+    const height=surfaceArea(edit.surface,this.read().arranged)?.y??0;
     const plane=side?new THREE.Plane(new THREE.Vector3(1,0,0),-3.11):new THREE.Plane(new THREE.Vector3(0,1,0),-height);
     if(!this.raycaster.ray.intersectPlane(plane,point))return;
     if(side){point.x=3.11;point.y=Math.abs(point.y-2.46)<Math.abs(point.y-2.03)?2.46:2.03;}
     else point.y=height;
-    if(edit.surface==='floor'&&!furniture[edit.id]){
+    if(selectSurface&&edit.surface==='floor'&&!furniture[edit.id]){
+      for(const name of ['table','stool'] as const){const area=surfaceArea(name,this.read().arranged);if(area&&this.read().equipped.includes(name)&&Math.abs(point.x-area.x)<area.width/2&&Math.abs(point.z-area.z)<area.depth/2){this.read().onSurface(name);return;}}
       if(point.x>2.85&&point.z>-2.6&&point.z<-.8){this.read().onSurface('shelves');return;}
       if(point.x>-.85&&point.x<1.2&&point.z< -2.9){this.read().onSurface('cabinet');return;}
-      if(point.x>2.4&&point.z> -1.2&&point.z<-.7){this.read().onSurface('desk');return;}
+      if(point.x>2.05&&point.x<2.46&&point.z> -2.95&&point.z< -2.48){this.read().onSurface('desk');return;}
       if(point.x< -2.4&&point.z> -2.2&&point.z< -1.6){this.read().onSurface('nightstand');return;}
     }
-    this.read().onPick(snapPlacement(edit.surface,point.x,point.y,point.z,edit.rotation));
+    return snapPlacement(edit.surface,point.x,point.y,point.z,edit.rotation);
   }
+  editorClick(event:MouseEvent){const position=this.editorPosition(event);if(position)this.read().onPick(position);}
+  down=(event:PointerEvent)=>{
+    if(event.button!==0||!this.read().editor||this.host.dataset.motion!=='idle')return;
+    const position=this.editorPosition(event);if(!position)return;
+    event.preventDefault();this.pendingPointer=undefined;const edit=this.read().editor!;
+    this.drag={pointerId:event.pointerId,surface:edit.surface,draft:position,origin:edit.draft};
+    this.renderer.domElement.setPointerCapture(event.pointerId);this.read().onPick(position);
+    this.host.dataset.dragging='true';this.renderer.domElement.style.cursor='grabbing';
+  };
+  previewDrag(position:Arrangement){
+    if(!this.drag)return;this.drag.draft=position;
+    for(const [id,object] of this.decorations)this.placeObject(id,object);
+    this.dirty=true;
+  }
+  up=(event:PointerEvent)=>{
+    if(this.drag?.pointerId!==event.pointerId)return;
+    const position=this.editorPosition(event,false)??this.drag.draft;
+    this.previewDrag(position);this.drag=undefined;this.pendingDrag=undefined;
+    this.read().onPick(position);this.suppressClick=true;this.host.dataset.dragging='false';
+    if(this.renderer.domElement.hasPointerCapture(event.pointerId))this.renderer.domElement.releasePointerCapture(event.pointerId);
+    this.renderer.domElement.style.cursor='grab';this.renderer.shadowMap.needsUpdate=true;this.dirty=true;
+  };
+  cancelDrag=(event:PointerEvent)=>{
+    if(this.drag?.pointerId!==event.pointerId)return;
+    const origin=this.drag.origin;this.drag=undefined;this.pendingDrag=undefined;
+    this.host.dataset.dragging='false';this.read().onPick(origin);this.renderer.domElement.style.cursor='grab';this.dirty=true;
+  };
   updateEditorGrid(){
     const edit=this.read().editor;this.editorGrid.replaceChildren();if(!edit)return;
     const width=this.host.clientWidth,height=this.host.clientHeight;this.editorGrid.setAttribute('viewBox',`0 0 ${width} ${height}`);
@@ -398,15 +436,16 @@ class RoomEngine {
         for(let z=-2.6;z<=-.9;z+=.05)line(project(3.08,y,z),project(3.08,y+.13,z));
       }
     }else{
-      const y={floor:.025,desk:.83,nightstand:.695,cabinet:2.35}[edit.surface];
-      const bounds={floor:[-3.2,3.2,-3.5,3.5],desk:[2.45,3.15,-1.16,-.73],nightstand:[-3.16,-2.62,-2.29,-1.79],cabinet:[-.78,1.17,-3.48,-2.98]}[edit.surface];
-      const [left,right,back,front]=bounds,step=edit.surface==='floor'?.2:.05;
-      for(let x=left;x<=right+.001;x+=step)line(project(x,y,back),project(x,y,front));
-      for(let z=back;z<=front+.001;z+=step)line(project(left,y,z),project(right,y,z));
+      const area=surfaceArea(edit.surface,this.read().arranged);if(!area)return;
+      const y=area.y+.01,step=edit.surface==='floor'?.2:.05,angle=area.rotation*Math.PI/180;
+      const local=(x:number,z:number)=>project(area.x+x*Math.cos(angle)+z*Math.sin(angle),y,area.z-x*Math.sin(angle)+z*Math.cos(angle));
+      for(let x=-area.width/2;x<=area.width/2+.001;x+=step)line(local(x,-area.depth/2),local(x,area.depth/2));
+      for(let z=-area.depth/2;z<=area.depth/2+.001;z+=step)line(local(-area.width/2,z),local(area.width/2,z));
     }
-    if(edit.draft){
-      const p=edit.draft,size=furniture[edit.id],w=size?.width??.24,d=size?.depth??.24;
-      const polygon=document.createElementNS('http://www.w3.org/2000/svg','polygon');polygon.setAttribute('class','cursor');
+    const draft=this.drag?.draft??edit.draft;
+    if(draft){
+      const p=draft,size=furniture[edit.id],w=size?.width??.24,d=size?.depth??.24;
+      const polygon=document.createElementNS('http://www.w3.org/2000/svg','polygon');polygon.setAttribute('class',placementError(edit.id,p,Object.fromEntries(this.read().equipped.map(id=>[id,this.read().arranged[id]])))?'cursor invalid':'cursor');
       polygon.setAttribute('points',(edit.surface==='shelves'?[[p.x-.02,p.y,p.z-w/2],[p.x-.02,p.y,p.z+w/2],[p.x-.02,p.y+.3,p.z+w/2],[p.x-.02,p.y+.3,p.z-w/2]]:[[-w/2,0,-d/2],[w/2,0,-d/2],[w/2,0,d/2],[-w/2,0,d/2]].map(([x,,z])=>{const angle=p.rotation*Math.PI/180;return [p.x+x*Math.cos(angle)+z*Math.sin(angle),p.y+.03,p.z-x*Math.sin(angle)+z*Math.cos(angle)];})).map(([x,y,z])=>project(x,y,z)).join(' '));this.editorGrid.appendChild(polygon);
     }
   }
@@ -431,13 +470,14 @@ class RoomEngine {
     }
   }
   click=(event:MouseEvent)=>{
+    if(this.suppressClick){this.suppressClick=false;return;}
     if(this.read().editor){this.editorClick(event);return;}
     const hit=this.hit(event);if(!hit)return;const p=this.read();
     if(hit.kind==='game'){if(p.view==='shelf')p.onGame(p.ranked[hit.slot!]);else p.onShelf();}
     else if(hit.kind==='shelf')p.onShelf();else if(hit.kind==='computer')p.onComputer();else p.onTrophies();
   };
-  move=(event:PointerEvent)=>{this.pendingPointer={clientX:event.clientX,clientY:event.clientY};};
-  leave=()=>{this.pendingPointer=undefined;this.setHighlight();this.renderer.domElement.style.cursor='default';};
+  move=(event:PointerEvent)=>{if(this.drag?.pointerId===event.pointerId){this.pendingDrag={clientX:event.clientX,clientY:event.clientY};return;}this.pendingPointer={clientX:event.clientX,clientY:event.clientY};};
+  leave=()=>{if(this.drag)return;this.pendingPointer=undefined;this.setHighlight();this.renderer.domElement.style.cursor='default';};
   contextLost=(event:Event)=>{event.preventDefault();this.ready=false;this.state('error');};
 
   project(element:HTMLElement,position:THREE.Vector3){
@@ -447,7 +487,8 @@ class RoomEngine {
     element.style.visibility=v.z>1||v.z<0||Math.abs(v.x)>1||Math.abs(v.y)>1?'hidden':'visible';
   }
   anchors(){
-    const anchors:[string,THREE.Vector3][]=[['shelf',new THREE.Vector3(.2,.1,-2.95)],['computer',new THREE.Vector3(2.7,.85,-1.85)],['trophies',new THREE.Vector3(.2,2.42,-3.2)],['library',new THREE.Vector3(1.56,1.45,-3)],['edit-shelves',new THREE.Vector3(3,2.46,-1.7)],['edit-desk',new THREE.Vector3(2.8,.82,-.94)],['edit-nightstand',new THREE.Vector3(-2.74,.685,-1.91)],['edit-cabinet',new THREE.Vector3(.2,2.34,-3.2)]];
+    const anchors:[string,THREE.Vector3][]=[['shelf',new THREE.Vector3(.2,.1,-2.95)],['computer',new THREE.Vector3(2.7,.85,-1.85)],['trophies',new THREE.Vector3(.2,2.42,-3.2)],['library',new THREE.Vector3(1.3,1.45,-3)],['edit-shelves',new THREE.Vector3(3,2.46,-1.7)],['edit-desk',new THREE.Vector3(2.26,.8,-2.71)],['edit-nightstand',new THREE.Vector3(-2.74,.685,-1.91)],['edit-cabinet',new THREE.Vector3(.2,2.34,-3.2)]];
+    for(const id of ['table','stool'] as const){const area=surfaceArea(id,this.read().arranged);if(area)anchors.push([`edit-${id}`,new THREE.Vector3(area.x,area.y,area.z)]);}
     for(const [id,point] of anchors){const el=this.host.parentElement?.querySelector<HTMLElement>(`[data-anchor="${id}"]`);if(el)this.project(el,point);}
     for(let i=0;i<this.slots.length;i++){
       const el=this.host.parentElement?.querySelector<HTMLElement>(`[data-slot="${i}"]`);if(!el)continue;
@@ -461,6 +502,8 @@ class RoomEngine {
     if(this.disposed)return;
     const p=this.read(),view=p.editor?`edit-${p.editor.surface}`:p.view==='library'?'library':p.view==='shelf'?'shelf':'room';
     if(this.ready){
+      if(this.drag&&(!p.editor||p.editor.surface!==this.drag.surface)){this.drag=undefined;this.pendingDrag=undefined;this.host.dataset.dragging='false';}
+      if(this.pendingDrag&&this.drag){const position=this.editorPosition(this.pendingDrag,false);this.pendingDrag=undefined;if(position)this.previewDrag(position);}
       if(this.pendingPointer){
         const hoverStart=performance.now();
         const hit=this.hoverHit(this.pendingPointer);this.pendingPointer=undefined;
@@ -474,7 +517,15 @@ class RoomEngine {
         if(p.editor){
           const surface=p.editor.surface;
           if(surface==='shelves'){this.targetPosition.set(.1,2.3,-1.7);const dummy=new THREE.PerspectiveCamera();dummy.position.copy(this.targetPosition);dummy.lookAt(3.11,2.2,-1.7);this.targetQuaternion.copy(dummy.quaternion);}
-          else{this.targetPosition.set(0,10.5,.01);const dummy=new THREE.PerspectiveCamera();dummy.position.copy(this.targetPosition);dummy.up.set(0,0,-1);dummy.lookAt(0,0,0);this.targetQuaternion.copy(dummy.quaternion);}
+          else if(surface!=='floor'){
+            const area=surfaceArea(surface,p.arranged);
+            if(area){
+              const dummy=new THREE.PerspectiveCamera();
+              if(surface==='desk')dummy.position.set(area.x-1.1,area.y+1.1,area.z+1.25);
+              else dummy.position.set(area.x,area.y+(surface==='cabinet'?.85:.7),area.z+(surface==='cabinet'?1.8:1.05));
+              dummy.lookAt(area.x,area.y+.08,area.z);this.targetPosition.copy(dummy.position);this.targetQuaternion.copy(dummy.quaternion);
+            }
+          }else{this.targetPosition.set(0,10.5,.01);const dummy=new THREE.PerspectiveCamera();dummy.position.copy(this.targetPosition);dummy.up.set(0,0,-1);dummy.lookAt(0,0,0);this.targetQuaternion.copy(dummy.quaternion);}
         }else if(view==='library'){
           this.targetPosition.set(.2,1.8,1.1);const dummy=new THREE.PerspectiveCamera();dummy.position.copy(this.targetPosition);dummy.lookAt(1.1,1.3,-3.2);this.targetQuaternion.copy(dummy.quaternion);
         }else if(view==='shelf'){
@@ -491,7 +542,7 @@ class RoomEngine {
       this.host.dataset.motion=this.camera.position.distanceToSquared(this.targetPosition)>1e-6||this.camera.quaternion.angleTo(this.targetQuaternion)>.001?'moving':'idle';
       if(this.dirty&&!document.hidden){
         if(this.contactPass)this.contactPass.enabled=this.host.dataset.motion==='idle';
-        this.camera.updateMatrixWorld();if(this.composer)this.composer.render();else this.renderer.render(this.scene,this.camera);this.anchors();this.updateHighlightOverlay();this.updateEditorGrid();this.dirty=false;
+        this.camera.updateMatrixWorld();if(this.composer&&!this.drag)this.composer.render();else this.renderer.render(this.scene,this.camera);this.anchors();this.updateHighlightOverlay();this.updateEditorGrid();this.dirty=false;
         this.host.dataset.rendered='true';this.host.dataset.slots=String(this.slots.length);this.host.dataset.frame=String(++this.renderedFrames);
         this.host.dataset.positions=JSON.stringify(Object.fromEntries([...this.decorations].filter(([,o])=>o.visible).map(([id,o])=>[id,o.position.toArray()])));
         this.host.dataset.placed=[...this.decorations.entries()].filter(([,o])=>o.visible&&o.children.length>0).map(([id])=>id).join('|');
@@ -501,7 +552,7 @@ class RoomEngine {
   };
   dispose(){
     this.setHighlight();this.disposed=true;cancelAnimationFrame(this.frame);this.resizeObserver.disconnect();
-    const c=this.renderer.domElement;c.removeEventListener('click',this.click);c.removeEventListener('pointermove',this.move);c.removeEventListener('pointerleave',this.leave);c.removeEventListener('webglcontextlost',this.contextLost);
+    const c=this.renderer.domElement;c.removeEventListener('pointerdown',this.down);c.removeEventListener('pointerup',this.up);c.removeEventListener('pointercancel',this.cancelDrag);c.removeEventListener('lostpointercapture',this.cancelDrag);c.removeEventListener('click',this.click);c.removeEventListener('pointermove',this.move);c.removeEventListener('pointerleave',this.leave);c.removeEventListener('webglcontextlost',this.contextLost);
     for(const pass of this.composer?.passes??[])pass.dispose();this.composer?.dispose();disposeTree(this.scene);this.appearance.dispose();this.environment.dispose();this.renderer.dispose();this.renderer.forceContextLoss();c.remove();this.highlightOverlay.remove();this.editorGrid.remove();
   }
 }
@@ -529,8 +580,8 @@ export function Room3D(props:Props){
       </nav>}
       {status==='ready'&&!props.editor&&props.view==='shelf'&&<nav className="three-game-actions" aria-label="Juegos de la estantería">{props.ranked.map((g,i)=><button key={i} className="case three-game-hit" data-slot={i} data-game-id={g.id} aria-label={`Ver ${g.title}`} title={g.title} onPointerEnter={()=>engine.current?.hoverGame(i)} onPointerLeave={()=>engine.current?.hoverGame()} onClick={()=>props.onGame(g)}><span className="sr-only">{g.title}</span></button>)}</nav>}
 
-      {status==='ready'&&!props.editor&&props.view!=='library'&&<button className="shelf-search-access" data-anchor="library" onClick={props.onLibrary} aria-label="Buscar juegos en la biblioteca"><span>⌕</span> Buscar juegos <kbd>Ctrl K</kbd></button>}
-      {status==='ready'&&props.editor&&props.editor.surface!=='shelves'&&!furniture[props.editor.id]&&<nav className="editor-surfaces" aria-label="Elegir superficie">{(['shelves','desk','nightstand','cabinet'] as Surface[]).map(surface=><button key={surface} data-anchor={`edit-${surface}`} onClick={()=>props.onSurface(surface)}>{{shelves:'Decorar baldas',desk:'Escritorio',nightstand:'Mesilla',cabinet:'Sobre la estantería'}[surface as 'shelves'|'desk'|'nightstand'|'cabinet']}</button>)}</nav>}
+      {status==='ready'&&!props.editor&&props.view==='shelf'&&<button className="shelf-search-access" data-anchor="library" onClick={props.onLibrary} aria-label="Abrir biblioteca"><BookOpen size={15}/> Biblioteca</button>}
+      {status==='ready'&&props.editor&&props.editor.surface==='floor'&&!furniture[props.editor.id]&&<nav className="editor-surfaces" aria-label="Elegir superficie">{(['shelves','desk','nightstand','cabinet',...(props.equipped.includes('table')?['table']:[]),...(props.equipped.includes('stool')?['stool']:[])] as Surface[]).map(surface=><button key={surface} data-anchor={`edit-${surface}`} onClick={()=>props.onSurface(surface)}>{surfaceNames[surface]}</button>)}</nav>}
       <div className="equipped-status sr-only" aria-label="Objetos colocados">{props.equipped.map(id=><span className={`placed-${id}`} key={id}>{id}</span>)}</div>
     </div>
   </div>;
