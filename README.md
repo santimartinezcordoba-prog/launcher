@@ -22,7 +22,7 @@ La compilación comprueba TypeScript y crea `dist/`, incluyendo los modelos. Nin
 
 ## Pantalla principal limpia
 
-La entrada centra la vista en la habitación. Los muebles interactivos muestran un contorno ligero al pasar el ratón. La puerta Sala de colección abre una segunda habitación ampliada, con estanterías por género, Favoritos y Más jugados. Su vista general muestra todos los muebles de frente y permite desplazarse para verlos. Desde allí se puede abrir la biblioteca completa o filtrada por género. Pulsa el ordenador para abrir la biblioteca, los ajustes, las misiones y el inventario. Ctrl+K abre la búsqueda y Escape vuelve atrás. Los controles de teclado de los muebles solo se muestran al recibir foco.
+La entrada centra la vista en la habitación. Los muebles interactivos muestran un contorno ligero al pasar el ratón. La puerta Sala de colección abre una segunda habitación ampliada, con estanterías por género, Favoritos y Más jugados. La vista principal conserva la habitación 3D, con suelo, paredes y las dos estanterías centrales. El índice frontal con desplazamiento es opcional. Desde allí se puede abrir la biblioteca completa o filtrada por género. Pulsa el ordenador para abrir la biblioteca, los ajustes, las misiones y el inventario. Ctrl+K abre la búsqueda y Escape vuelve atrás. Los controles de teclado de los muebles solo se muestran al recibir foco.
 
 La personalización se desbloquea con un **kit de 75 puntos**, disponible en los ajustes del ordenador y en la tienda. El kit es una compra única; los cambios de ambiente, paredes y sábanas quedan incluidos. Los puntos siguen siendo locales de demostración.
 
@@ -209,3 +209,16 @@ Capturas de validación con ilustraciones de prueba inyectadas únicamente por P
 ![Vista frontal con Favoritos y Más jugados](docs/collection-frontal.png)
 
 ![Estantería ampliada de Más jugados](docs/collection-expanded.png)
+
+
+## Habitación 3D como vista principal (0.6.1)
+
+Entrar por la puerta vuelve a mostrar la sala 3D completa, con suelo, paredes, iluminación y los muebles situados en el espacio. Se mantienen las estanterías ampliadas por género y las dos centrales de Favoritos y Más jugados. La vista general permite mirar arrastrando y ampliar con la rueda; Centro, Fondo, Izquierda y Derecha ofrecen encuadres de cada zona. Pulsar un rótulo acerca su estantería y muestra hasta ocho portadas.
+
+Índice frontal abre explícitamente la vista con desplazamiento de 0.6.0; Sala 3D regresa a la habitación. El dormitorio original permanece accesible mediante Volver a mi habitación. Las imágenes se proyectan sobre los objetos y se ocultan detrás de otras estanterías cuando corresponde, sin depender del umbral de tamaño que obligaba a usar F11. La cámara se actualiza bajo demanda y las sombras no se recalculan por cada movimiento del ratón.
+
+Validación: nueve pruebas de navegador que cubren la entrada 3D por defecto, cambio de vistas y arrastre, índice opcional, vuelta al dormitorio, favoritos, más jugados, filtros, tamaño compacto y recuperación sin WebGL; compilación de producción. Las capturas siguientes usan portadas de prueba inyectadas por Playwright:
+
+![Sala 3D restaurada](docs/collection-room-restored.png)
+
+![Vista de las estanterías centrales](docs/collection-room-center.png)

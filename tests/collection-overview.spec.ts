@@ -1,7 +1,7 @@
 import {test,expect} from '@playwright/test';
 const portrait='<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900"><rect width="600" height="900" fill="#285872"/><rect x="8" y="8" width="584" height="884" fill="none" stroke="#efd09d" stroke-width="16"/><path d="M0 650L300 220l300 430Z" fill="#18352d"/><text x="60" y="830" fill="white" font-size="50">PORTADA COMPLETA</text></svg>';
 async function enter(page:import('@playwright/test').Page){
- await page.route(/^https:/,route=>route.fulfill({body:portrait,contentType:'image/svg+xml'}));await page.goto('/');await page.getByRole('button',{name:'Entrar en la sala de colección'}).click();await expect(page.getByTestId('collection-room')).toHaveAttribute('data-rendered','true');
+ await page.route(/^https:/,route=>route.fulfill({body:portrait,contentType:'image/svg+xml'}));await page.goto('/');await page.getByRole('button',{name:'Entrar en la sala de colección'}).click();await page.getByRole('button',{name:'Índice frontal',exact:true}).click();await expect(page.getByTestId('collection-room')).toHaveAttribute('data-rendered','true');
 }
 test('entrada a 1600×770: todas las estanterías frontales, imágenes cargadas y cambio de tamaño sin F11',async({page})=>{
  await page.setViewportSize({width:1600,height:770});await enter(page);
