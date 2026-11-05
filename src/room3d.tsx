@@ -49,8 +49,7 @@ function spineTexture(game: Game, favorite: boolean,art?:Artwork) {
   const canvas = document.createElement('canvas'); canvas.width=192; canvas.height=1024;
   const c = canvas.getContext('2d')!;c.scale(2,2);c.imageSmoothingQuality='high';
   // A printed paper insert inside a dark plastic case, inspired by physical PC boxes.
-  const light=game.id%3!==0;
-  c.fillStyle=light?'#deddd4':'#25282b';c.fillRect(0,0,96,512);
+  c.fillStyle='#25282b';c.fillRect(0,0,96,512);
   if(art){
     const aw='naturalWidth' in art?art.naturalWidth:art.width,ah='naturalHeight' in art?art.naturalHeight:art.height;
     const scale=Math.max(26/aw,416/ah),w=aw*scale,h=ah*scale;
@@ -58,7 +57,7 @@ function spineTexture(game: Game, favorite: boolean,art?:Artwork) {
   }else{c.fillStyle=game.color;c.fillRect(78,50,15,416);}
   const edge=c.createLinearGradient(0,0,96,0);edge.addColorStop(0,'#0008');edge.addColorStop(.12,'#0001');edge.addColorStop(.8,'#fff1');edge.addColorStop(1,'#0008');c.fillStyle=edge;c.fillRect(0,0,96,512);
   c.fillStyle='#172d4f';c.fillRect(0,0,96,48);c.fillStyle='#f1f4f6';c.font='bold 22px sans-serif';c.textAlign='center';c.fillText('PC',48,32);
-  c.save();c.translate(45,259);c.rotate(Math.PI/2);c.fillStyle=light?'#141619':'#f0eee6';c.font='bold 27px sans-serif';c.fillText(game.title.toLocaleUpperCase(),0,0,372);c.restore();
+  c.save();c.translate(45,259);c.rotate(Math.PI/2);c.fillStyle='#f0eee6';c.font='bold 27px sans-serif';c.fillText(game.title.toLocaleUpperCase(),0,0,372);c.restore();
   c.fillStyle='#172d4f';c.fillRect(0,474,96,38);
   if(favorite){c.fillStyle='#e9c47b';c.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5;const r=i%2?5:10;const x=79+Math.cos(a)*r,y=23+Math.sin(a)*r;i?c.lineTo(x,y):c.moveTo(x,y);}c.closePath();c.fill();}
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=4;

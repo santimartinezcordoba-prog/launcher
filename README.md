@@ -174,3 +174,5 @@ Se eliminan las miniportadas repetidas y se amplía el título vertical. Las tex
 Los lomos tienen un inserto claro u oscuro, bandas azules y texto vertical de alto contraste, con una franja del arte cuando está disponible. La vista previa conserva la carátula completa. La captura muestra el diseño sin conexión a las fuentes de arte.
 
 ![Cajas de colección](docs/spines-physical.png)
+
+En la versión 0.4.3 todos los lomos usan un fondo oscuro con texto claro. La franja sigue mostrando arte cuando se puede cargar; no representa el diseño original del lomo físico.
