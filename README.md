@@ -22,7 +22,7 @@ La compilación comprueba TypeScript y crea `dist/`, incluyendo los modelos. Nin
 
 ## Pantalla principal limpia
 
-La entrada centra la vista en la habitación. Los muebles interactivos muestran un contorno ligero al pasar el ratón. La puerta Sala de colección abre una segunda habitación ampliada, con estanterías por género, Favoritos y Más jugados. La vista principal conserva la habitación 3D, con suelo, paredes y las dos estanterías centrales. El índice frontal con desplazamiento es opcional. Desde allí se puede abrir la biblioteca completa o filtrada por género. Pulsa el ordenador para abrir la biblioteca, los ajustes, las misiones y el inventario. Ctrl+K abre la búsqueda y Escape vuelve atrás. Los controles de teclado de los muebles solo se muestran al recibir foco.
+La entrada centra la vista en la habitación. Los muebles interactivos muestran un contorno ligero al pasar el ratón. La puerta Sala de colección abre una segunda habitación ampliada, con estanterías por género, Favoritos y Más jugados. La vista principal utiliza la primera sala 3D ampliada, con su suelo, paredes y techo. Favoritos y Más jugados están en la pared del fondo, frente a la entrada. Desde allí se puede abrir la biblioteca completa o filtrada por género. Pulsa el ordenador para abrir la biblioteca, los ajustes, las misiones y el inventario. Ctrl+K abre la búsqueda y Escape vuelve atrás. Los controles de teclado de los muebles solo se muestran al recibir foco.
 
 La personalización se desbloquea con un **kit de 75 puntos**, disponible en los ajustes del ordenador y en la tienda. El kit es una compra única; los cambios de ambiente, paredes y sábanas quedan incluidos. Los puntos siguen siendo locales de demostración.
 
@@ -31,7 +31,7 @@ El inventario ofrece Colocar o Mover objeto. La cámara pasa a una vista cenital
 ## Qué puedes probar
 
 - Pulsar el ordenador o cualquier parte del setup para abrir ajustes, tienda, misiones e inventario.
-- Entrar por la puerta en la sala de colección, elegir un género y seleccionar sus portadas frontales. La vista general ofrece dos portadas grandes por mueble; al acercarte aparecen hasta ocho. Los demás juegos están en la biblioteca filtrada.
+- Entrar por la puerta en la sala de colección, elegir un género y seleccionar sus portadas frontales. Cada mueble admite hasta ocho portadas en dos filas de cuatro; acercarte permite verlas con detalle. Los demás juegos están en la biblioteca filtrada.
 - Abrir Mis platinos desde el ordenador. Las fichas incluyen progreso y logros.
 - Volver con Escape: ficha → sala de colección → entrada. Ctrl+K abre el buscador.
 - Buscar entre 60 juegos de ejemplo y filtrar por tienda, género, instalación o favoritos.
@@ -222,3 +222,18 @@ Validación: nueve pruebas de navegador que cubren la entrada 3D por defecto, ca
 ![Sala 3D restaurada](docs/collection-room-restored.png)
 
 ![Vista de las estanterías centrales](docs/collection-room-center.png)
+
+
+## Primera sala ampliada, con ocho juegos por mueble (0.6.2)
+
+Se recuperan directamente el componente y los estilos de la primera sala de colección (base 0.5.0), conservando su cámara en perspectiva desde dentro, el techo, el suelo, los materiales y el acercamiento animado. Se retiran las vistas añadidas en 0.6.0 y 0.6.1.
+
+La sala se amplía a 22,5 × 17,5 m para alojar catorce estanterías. Los muebles de Favoritos y Más jugados ocupan los dos huecos centrales de la **pared del fondo, frente a la entrada**; no hay estanterías en el centro del suelo. Los otros cuatro muebles del fondo conservan géneros y las paredes laterales alojan cuatro cada una.
+
+Cada estantería mide 3,4 m de ancho y muestra hasta ocho cajas, distribuidas en dos filas de cuatro. Se eligen ocho para conservar el tamaño de las portadas y la separación. Favoritos sigue las estrellas guardadas; Más jugados conserva el orden de horas de ejemplo. Se mantienen los botones de biblioteca con su filtro u orden correspondiente y el acceso al dormitorio original. Las portadas no se ocultan por el antiguo umbral fijo de tamaño de ventana.
+
+Validación: ocho pruebas de navegador, incluyendo posición real de ambos muebles en la misma pared de fondo, ausencia de muebles en medio, ocho portadas en dos filas legibles, favoritos, más jugados, filtros, vista compacta, recuperación sin WebGL y vuelta al dormitorio; compilación de producción. Las capturas usan imágenes de prueba inyectadas solo por Playwright:
+
+![Primera sala ampliada](docs/collection-original-expanded.png)
+
+![Ocho portadas al acercarse](docs/collection-original-eight.png)
