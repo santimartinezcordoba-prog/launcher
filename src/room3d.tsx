@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { GameArt } from './game-art';
 import { BookOpen } from 'lucide-react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -45,30 +46,23 @@ function disposeTree(root: THREE.Object3D) {
 }
 
 function spineTexture(game: Game, favorite: boolean,art?:Artwork) {
-  const canvas = document.createElement('canvas'); canvas.width=96; canvas.height=512;
-  const c = canvas.getContext('2d')!;
+  const canvas = document.createElement('canvas'); canvas.width=192; canvas.height=1024;
+  const c = canvas.getContext('2d')!;c.scale(2,2);c.imageSmoothingQuality='high';
   c.fillStyle=game.color; c.fillRect(0,0,96,512);
   if(art){
     const aw='naturalWidth' in art?art.naturalWidth:art.width,ah='naturalHeight' in art?art.naturalHeight:art.height;
     const scale=Math.max(96/aw,512/ah),w=aw*scale,h=ah*scale;
     c.drawImage(art,(96-w)/2,(512-h)/2,w,h);
-    c.fillStyle='#07101688';c.fillRect(0,0,96,512);
-    // A small complete jacket illustration, plus a readable vertical printed title.
-    const ratio=Math.min(84/aw,125/ah);
-    const pw=aw*ratio,ph=ah*ratio;c.drawImage(art,(96-pw)/2,53,pw,ph);
-  }else{
-    c.fillStyle='#d2c49a';c.beginPath();c.arc(69,110,20,0,Math.PI*2);c.fill();
-    for(let i=0;i<5;i++){c.fillStyle=i%2?'#142932':'#314751';c.beginPath();c.moveTo(-30+i*26,220);c.lineTo(20+i*23,115+i*13);c.lineTo(80+i*24,250);c.closePath();c.fill();}
-    c.strokeStyle='#e5d6a633';for(let y=270;y<490;y+=23){c.beginPath();c.moveTo(0,y);c.lineTo(96,y-20);c.stroke();}
+    c.fillStyle='#07101655';c.fillRect(0,0,96,512);
   }
   const gradient=c.createLinearGradient(0,0,96,0);
   gradient.addColorStop(0,'#0009');gradient.addColorStop(.3,'#ffffff18');gradient.addColorStop(1,'#0008');c.fillStyle=gradient;c.fillRect(0,0,96,512);
-  c.fillStyle='#071119a8';c.fillRect(26,190,45,270);
+  c.fillStyle='#071119d9';c.fillRect(22,60,54,403);
   c.fillStyle='#152439';c.fillRect(0,0,96,48);c.fillStyle='#ddd';c.font='bold 23px sans-serif';c.textAlign='center';c.fillText('PC',48,33);
-  c.save();c.translate(54,325);c.rotate(Math.PI/2);c.fillStyle='#fff2df';c.font='bold 21px sans-serif';c.fillText(game.title,0,0,250);c.restore();
-  if(favorite){c.fillStyle='#f9d788';c.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5;const r=i%2?10:23;const x=48+Math.cos(a)*r,y=78+Math.sin(a)*r;i?c.lineTo(x,y):c.moveTo(x,y);}c.closePath();c.fill();}
+  c.save();c.translate(58,265);c.rotate(Math.PI/2);c.fillStyle='#fff2df';c.font='bold 28px sans-serif';c.fillText(game.title.toLocaleUpperCase(),0,0,375);c.restore();
+  if(favorite){c.fillStyle='#f9d788';c.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5;const r=i%2?5:11;const x=79+Math.cos(a)*r,y=23+Math.sin(a)*r;i?c.lineTo(x,y):c.moveTo(x,y);}c.closePath();c.fill();}
   c.fillStyle=game.installed?'#a5cfa4':'#676963';c.beginPath();c.arc(48,480,6,0,Math.PI*2);c.fill();
-  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=4;
   return texture;
 }
 
@@ -607,6 +601,7 @@ class RoomEngine {
 
 export function Room3D(props:Props){
   const host=useRef<HTMLDivElement>(null),engine=useRef<RoomEngine|null>(null),latest=useRef(props);latest.current=props;
+  const [preview,setPreview]=useState<number|null>(null);
   const [status,setStatus]=useState('loading'),[hover,setHover]=useState(''),[retry,setRetry]=useState(0);
   useEffect(()=>{
     setStatus('loading');
@@ -626,10 +621,11 @@ export function Room3D(props:Props){
         <button data-anchor="computer" aria-label="Abrir ajustes desde el ordenador" onClick={props.onComputer}>Mi ordenador <span>↗</span></button>
         <button data-anchor="trophies" aria-label="Ver estantería de platinos" onClick={props.onTrophies}>Mis platinos <span>↗</span></button>
       </nav>}
-      {status==='ready'&&!props.editor&&props.view==='shelf'&&<nav className="three-game-actions" aria-label="Juegos de la estantería">{props.ranked.map((g,i)=><button key={i} className="case three-game-hit" data-slot={i} data-game-id={g.id} aria-label={`Ver ${g.title}`} title={g.title} onPointerEnter={()=>engine.current?.hoverGame(i)} onPointerLeave={()=>engine.current?.hoverGame()} onClick={()=>props.onGame(g)}><span className="sr-only">{g.title}</span></button>)}</nav>}
+      {status==='ready'&&!props.editor&&props.view==='shelf'&&<nav className="three-game-actions" aria-label="Juegos de la estantería">{props.ranked.map((g,i)=><button key={i} className="case three-game-hit" data-slot={i} data-game-id={g.id} aria-label={`Ver ${g.title}`} title={g.title} onPointerEnter={()=>{engine.current?.hoverGame(i);setPreview(i);}} onPointerLeave={()=>{engine.current?.hoverGame();setPreview(null);}} onFocus={()=>setPreview(i)} onBlur={()=>setPreview(null)} onClick={()=>props.onGame(g)}><span className="sr-only">{g.title}</span></button>)}</nav>}
 
       {status==='ready'&&!props.editor&&props.view==='shelf'&&<button className="shelf-search-access" data-anchor="library" onClick={props.onLibrary} aria-label="Abrir biblioteca"><BookOpen size={15}/> Biblioteca</button>}
       {status==='ready'&&props.editor&&props.editor.surface==='floor'&&!furniture[props.editor.id]&&<nav className="editor-surfaces" aria-label="Elegir superficie">{(['shelves','desk','nightstand','cabinet',...(props.equipped.includes('table')?['table']:[]),...(props.equipped.includes('stool')?['stool']:[])] as Surface[]).map(surface=><button key={surface} data-anchor={`edit-${surface}`} onClick={()=>props.onSurface(surface)}>{surfaceNames[surface]}</button>)}</nav>}
+      {props.view==='shelf'&&!props.editor&&!props.blocked&&preview!==null&&props.ranked[preview]&&<aside className="shelf-game-preview" aria-label="Carátula del juego señalado"><div className="preview-poster"><GameArt key={props.ranked[preview].id} game={props.ranked[preview]}/></div><strong>{props.ranked[preview].title}</strong><small>{props.ranked[preview].store} · {props.ranked[preview].installed?'Instalado':'Sin instalar'}</small></aside>}
       <div className="equipped-status sr-only" aria-label="Objetos colocados">{props.equipped.map(id=><span className={`placed-${id}`} key={id}>{id}</span>)}</div>
     </div>
   </div>;

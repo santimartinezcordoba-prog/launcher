@@ -162,3 +162,9 @@ La galería carga hasta seis capturas y dos tráileres que devuelva Steam. Las c
 Validación: compilación de producción, dos pruebas de navegador con datos de tienda simulados, fallo de red y reintento; comprobación del saneamiento de la respuesta y rechazo de IDs inválidos. La consulta real a cada tienda y la ventana de Electron en Windows quedan sin verificar en este entorno.
 
 ![Ficha ampliada con respuesta de tienda simulada y portada de reserva](docs/game-info.png)
+
+## Lomos legibles (0.4.1)
+
+Se eliminan las miniportadas repetidas y se amplía el título vertical. Las texturas pasan a 192 × 1024, con filtrado anisotrópico; el arte fuente se reduce a 256 píxeles de ancho para no mantener todas las imágenes a tamaño completo. Al señalar o enfocar un juego aparece una carátula lateral completa, sin alterar el render 3D. La previsualización mantiene una ilustración de reserva mientras llega la imagen. Las fuentes externas y sus limitaciones de disponibilidad siguen siendo las mismas.
+
+![Lomos y vista previa, con la red de imágenes desactivada en la prueba](docs/spine-preview.png)

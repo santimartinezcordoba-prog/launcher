@@ -17,6 +17,6 @@ export function loadArtwork(game:Game){
  let pending=cache.get(game.id);if(pending)return pending;
  pending=(async()=>{for(const src of artworkSources(game)){
   const img=new Image();img.crossOrigin='anonymous';img.decoding='async';img.src=src;
-  try{await img.decode();if(typeof createImageBitmap==='function'){try{return await createImageBitmap(img,{resizeWidth:128,resizeHeight:Math.max(1,Math.round(128*img.naturalHeight/img.naturalWidth))});}catch{return img;}}return img;}catch{/* Try the next store asset; a failed source is not an absent game. */}
+  try{await img.decode();if(typeof createImageBitmap==='function'){try{return await createImageBitmap(img,{resizeWidth:256,resizeHeight:Math.max(1,Math.round(256*img.naturalHeight/img.naturalWidth))});}catch{return img;}}return img;}catch{/* Try the next store asset; a failed source is not an absent game. */}
  }return undefined;})();cache.set(game.id,pending);return pending;
 }
