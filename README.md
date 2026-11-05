@@ -237,3 +237,14 @@ Validación: ocho pruebas de navegador, incluyendo posición real de ambos muebl
 ![Primera sala ampliada](docs/collection-original-expanded.png)
 
 ![Ocho portadas al acercarse](docs/collection-original-eight.png)
+
+
+## Encuadre de las catorce estanterías (0.6.3)
+
+Acción pasa a la pared izquierda y Cooperativo a la derecha. El fondo queda con Aventura, Favoritos, Más jugados y Carreras; cada lateral aloja cinco muebles. Se reduce el ancho frontal y se deja espacio de entrada para que la cámara pueda situarse delante de la última estantería lateral. Se mantienen ocho cajas por mueble y los acercamientos de la sala original.
+
+La vista general calcula la posición de la cámara a partir de las ocho esquinas de los catorce muebles y de la proporción real de la ventana. Reserva márgenes horizontales y verticales en lugar de usar una posición fija dentro de las filas laterales. El encuadre se vuelve a calcular al redimensionar, sin recurrir a vistas cenitales ni a una cuadrícula. Los rótulos mantienen la posición de su mueble y ajustan su tamaño a la anchura proyectada; al señalarlos o enfocarlos se muestran a tamaño completo.
+
+Validación: ocho pruebas de navegador y repetición de la comprobación del encuadre final. Para cada uno de los catorce muebles se verifica que sus límites proyectados están dentro de la imagen, con márgenes, a 1600 × 770, 1600 × 900 y 1024 × 650. También se comprueban Acción y Cooperativo en los laterales, Favoritos y Más jugados en la pared del fondo, las ocho portadas y los filtros de biblioteca. Compilación de producción correcta. La captura usa portadas de prueba inyectadas por Playwright:
+
+![Las catorce estanterías completas en el encuadre](docs/collection-complete-frame.png)

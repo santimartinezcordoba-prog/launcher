@@ -13,10 +13,12 @@ export function collectionShelves(favorites:number[]):ShelfGroup[]{
   {id:'most-played',title:'Más jugados',collection:'most-played',games:[...games].sort((a,b)=>b.hours-a.hours||a.title.localeCompare(b.title,'es'))}
  ];
 }
-// The doorway is on the open front side (+Z); all special shelves sit on the back wall.
+// Four shelves on the back wall; Acción and Cooperativo move to the side walls.
 export function shelfPosition(index:number):[number,number,number,number]{
- if(index<4)return [[-8.875,-5.325,5.325,8.875][index],0,-8.35,0];
- if(index<8)return [-10.95,0,-6+(index-4)*3.7,Math.PI/2];
- if(index<12)return [10.95,0,-6+(index-8)*3.7,-Math.PI/2];
- return [index===12?-1.775:1.775,0,-8.35,0];
+ const left=[0,4,5,6,7],right=[3,8,9,10,11];
+ if(left.includes(index))return [-7.35,0,-7.95+left.indexOf(index)*3.75,Math.PI/2];
+ if(right.includes(index))return [7.35,0,-7.95+right.indexOf(index)*3.75,-Math.PI/2];
+ if(index===1)return [-5.325,0,-10.35,0];
+ if(index===2)return [5.325,0,-10.35,0];
+ return [index===12?-1.775:1.775,0,-10.35,0];
 }

@@ -22,16 +22,30 @@ export function CollectionRoom({favorites,onBack,onLibrary,onGame,blocked,reduce
   const timber=new THREE.TextureLoader().load('./textures/wood.jpg',()=>{dirty=true;renderer.shadowMap.needsUpdate=true;});timber.colorSpace=THREE.SRGBColorSpace;timber.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
   const wood=new THREE.MeshStandardMaterial({color:'#bea78f',roughness:.75,map:timber}),edge=new THREE.MeshStandardMaterial({color:'#cdb291',roughness:.6,map:timber}),wall=new THREE.MeshStandardMaterial({color:'#35493f',roughness:.95}),plastic=new THREE.MeshStandardMaterial({color:'#152326',roughness:.5});
   function box(parent:THREE.Object3D,x:number,y:number,z:number,w:number,h:number,d:number,material:THREE.Material){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
-  box(scene,0,-.1,0,22.5,.2,17.5,wood);box(scene,0,1.8,-8.65,22.5,3.6,.15,wall);box(scene,-11.25,1.8,0,.15,3.6,17.3,wall);box(scene,11.25,1.8,0,.15,3.6,17.3,wall);box(scene,0,3.65,0,22.5,.1,17.3,wall);
-  for(let x=-11;x<11.2;x+=.4)box(scene,x,.004,0,.009,.005,17.3,edge);
+  const roomWidth=15.4,backZ=-10.65,frontZ=24,roomDepth=frontZ-backZ,centerZ=(frontZ+backZ)/2;
+  box(scene,0,-.1,centerZ,roomWidth,.2,roomDepth,wood);box(scene,0,1.8,backZ,roomWidth,3.6,.15,wall);box(scene,-roomWidth/2,1.8,centerZ,.15,3.6,roomDepth,wall);box(scene,roomWidth/2,1.8,centerZ,.15,3.6,roomDepth,wall);box(scene,0,3.65,centerZ,roomWidth,.1,roomDepth,wall);
+  for(let x=-7.5;x<7.6;x+=.4)box(scene,x,.004,centerZ,.009,.005,roomDepth,edge);
   const racks=groupsRef.current.map((_,i)=>{
    const root=new THREE.Group(),[x,y,z,rotation]=shelfPosition(i);root.position.set(x,y,z);root.rotation.y=rotation;scene.add(root);
    box(root,0,1.2,-.02,shelfWidth-.12,2.45,.1,wood);for(const x of [-shelfWidth/2+.04,shelfWidth/2-.04])box(root,x,1.2,.16,.1,2.55,.5,edge);for(const y of [.1,1.22,2.48])box(root,0,y,.17,shelfWidth,.08,.56,edge);
    const covers=Array.from({length:shelfCapacity},(_,j)=>{const x=(j%4-1.5)*.78,y=j<4?1.74:.62,mesh=box(root,x,y,.26,.64,.96,.1,plastic);return {mesh,x,y,slot:j};});return {root,covers};
   });
   container.dataset.rackLayout=JSON.stringify(racks.map((rack,i)=>({title:groupsRef.current[i].title,position:rack.root.position.toArray(),rotation:rack.root.rotation.y})));
-  const home=new THREE.Vector3(0,2.2,4.4),homeLook=new THREE.Vector3(0,1.35,-3),from=new THREE.Vector3(),fromLook=homeLook.clone(),look=homeLook.clone();camera.position.copy(home);let current:number|null|undefined=undefined,start=0,frame=0,renderCount=0,disposed=false;let currentGroups=groupsRef.current;
-  function resize(){const w=container.clientWidth,h=container.clientHeight;if(!w||!h)return;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();dirty=true;}
+  const home=new THREE.Vector3(0,2.2,17),homeLook=new THREE.Vector3(0,1.35,-1),from=new THREE.Vector3(),fromLook=homeLook.clone(),look=homeLook.clone();camera.position.copy(home);let current:number|null|undefined=undefined,start=0,frame=0,renderCount=0,disposed=false;let currentGroups=groupsRef.current;
+  scene.updateMatrixWorld(true);
+  const rackCorners=racks.map(rack=>{const box=new THREE.Box3().setFromObject(rack.root);return [box.min.x,box.max.x].flatMap(x=>[box.min.y,box.max.y].flatMap(y=>[box.min.z,box.max.z].map(z=>new THREE.Vector3(x,y,z))));});
+  const fitCamera=new THREE.PerspectiveCamera(55,1,.1,100);
+  function resize(){
+   const w=container.clientWidth,h=container.clientHeight;if(!w||!h)return;
+   renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();fitCamera.aspect=w/h;fitCamera.updateProjectionMatrix();
+   // Fit every corner of every shelf, including the nearest side units, with safe screen margins.
+   for(let z=10;z<=45;z+=.25){
+    fitCamera.position.set(0,home.y,z);fitCamera.lookAt(homeLook);fitCamera.updateMatrixWorld();
+    if(rackCorners.every(corners=>corners.every(corner=>{const p=corner.clone().project(fitCamera);return p.z>0&&p.z<1&&Math.abs(p.x)<=.83&&Math.abs(p.y)<=.65;}))){home.z=z;break;}
+   }
+   if(current===undefined)camera.position.copy(home);
+   dirty=true;
+  }
   const observer=new ResizeObserver(resize);observer.observe(container);resize();
   const project=(v:THREE.Vector3)=>v.clone().project(camera);
   function tick(time:number){if(disposed)return;const selected=focusRef.current;
@@ -41,10 +55,15 @@ export function CollectionRoom({favorites,onBack,onLibrary,onGame,blocked,reduce
    if(selected!==null){const rack=racks[selected];targetLook=rack.root.localToWorld(new THREE.Vector3(0,1.32,.25));target=rack.root.localToWorld(new THREE.Vector3(0,1.55,3.4));}
    const t=reduced||matchMedia('(prefers-reduced-motion: reduce)').matches?1:Math.min(1,(time-start)/650),factor=1-(1-t)**3;
    if(dirty||t<1){camera.position.lerpVectors(from,target,factor);look.lerpVectors(fromLook,targetLook,factor);camera.lookAt(look);camera.updateMatrixWorld();scene.updateMatrixWorld(true);
-    const w=container.clientWidth,h=container.clientHeight,labels:DOMRect[]=[];let newPreloads=false;
+    const w=container.clientWidth,h=container.clientHeight;let newPreloads=false;
     racks.forEach((rack,i)=>{
-     const label=container.querySelector<HTMLElement>(`[data-genre-index="${i}"]`),p=project(rack.root.localToWorld(new THREE.Vector3(0,2.7,.25)));
-     if(label){label.style.left=`${(p.x+1)*w/2}px`;label.style.top=`${(1-p.y)*h/2}px`;label.style.visibility=selected===null&&p.z>0&&p.z<1&&Math.abs(p.x)<1&&Math.abs(p.y)<1?'visible':'hidden';if(label.style.visibility==='visible'){const bounds=label.getBoundingClientRect();if(labels.some(b=>bounds.left<b.right+6&&bounds.right>b.left-6&&bounds.top<b.bottom+6&&bounds.bottom>b.top-6))label.style.visibility='hidden';else labels.push(bounds);}}
+     const label=container.querySelector<HTMLElement>(`[data-genre-index="${i}"]`),p=project(rack.root.localToWorld(new THREE.Vector3(0,2.95,.25)));
+     if(label){
+      const projected=rackCorners[i].map(project),rackWidth=(Math.max(...projected.map(p=>p.x))-Math.min(...projected.map(p=>p.x)))*w/2;
+      const scale=Math.min(1,rackWidth*.86/Math.max(1,label.offsetWidth));
+      label.style.left=`${(p.x+1)*w/2}px`;label.style.top=`${(1-p.y)*h/2}px`;label.style.transform=`translate(-50%,-50%) scale(${scale})`;
+      label.style.visibility=selected===null&&p.z>0&&p.z<1&&Math.abs(p.x)<1&&Math.abs(p.y)<1?'visible':'hidden';
+     }
      rack.covers.forEach(({mesh,x,y,slot})=>{
       const game=groupsRef.current[i].games[slot];if(!game){mesh.visible=false;return;}
       const points=[[-.3,.45],[.3,.45],[.3,-.45],[-.3,-.45]].map(([dx,dy])=>project(rack.root.localToWorld(new THREE.Vector3(x+dx,y+dy,.322))));
@@ -54,6 +73,8 @@ export function CollectionRoom({favorites,onBack,onLibrary,onGame,blocked,reduce
       mesh.visible=visible;const button=container.querySelector<HTMLElement>(`[data-collection-game="${i}:${slot}"]`);if(button){button.style.visibility=visible?'visible':'hidden';button.style.transform=visible?quad(points,w,h):'';}
      });
     });
+    if(selected===null)container.dataset.rackScreenBounds=JSON.stringify(rackCorners.map((corners,i)=>{const points=corners.map(project);return {title:groupsRef.current[i].title,left:Math.min(...points.map(p=>(p.x+1)*w/2)),right:Math.max(...points.map(p=>(p.x+1)*w/2)),top:Math.min(...points.map(p=>(1-p.y)*h/2)),bottom:Math.max(...points.map(p=>(1-p.y)*h/2))};}));
+    container.dataset.viewportSize=`${w}x${h}`;
     // Visibility uses the settled projection; draw physical cases once with those visibility flags.
     if(t===1)renderer.shadowMap.needsUpdate=true;renderer.render(scene,camera);if(newPreloads)setPreloaded(new Set(preloadedRef.current));container.dataset.frame=String(++renderCount);container.dataset.genre=selected===null?'all':groupsRef.current[selected].title;container.dataset.layout=selected===null?'room':'focus';container.dataset.motion=t<1?'moving':'idle';container.dataset.rendered='true';dirty=t<1;
    }frame=requestAnimationFrame(tick);

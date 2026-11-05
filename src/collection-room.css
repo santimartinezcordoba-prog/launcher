@@ -4,3 +4,5 @@
 .collection-case-title{display:none}.collection-cover:has(.artwork-offline) .collection-case-title{display:block}.collection-cover:has(.artwork-offline) .collection-case-title::after{content:' · Sin carátula';color:#beb9ad;font-size:9px}
 
 .collection-room article[hidden]{display:none}.collection-empty{position:absolute;inset:35% 25%;display:grid;place-content:center;text-align:center;background:#14231eee;border:1px solid #d9bd8844;border-radius:10px;padding:20px;z-index:3}
+
+.genre-plaque:hover,.genre-plaque:focus-visible{transform:translate(-50%,-50%) scale(1)!important;z-index:5}
