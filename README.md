@@ -168,3 +168,9 @@ Validación: compilación de producción, dos pruebas de navegador con datos de 
 Se eliminan las miniportadas repetidas y se amplía el título vertical. Las texturas pasan a 192 × 1024, con filtrado anisotrópico; el arte fuente se reduce a 256 píxeles de ancho para no mantener todas las imágenes a tamaño completo. Al señalar o enfocar un juego aparece una carátula lateral completa, sin alterar el render 3D. La previsualización mantiene una ilustración de reserva mientras llega la imagen. Las fuentes externas y sus limitaciones de disponibilidad siguen siendo las mismas.
 
 ![Lomos y vista previa, con la red de imágenes desactivada en la prueba](docs/spine-preview.png)
+
+## Cajas de colección (0.4.2)
+
+Los lomos tienen un inserto claro u oscuro, bandas azules y texto vertical de alto contraste, con una franja del arte cuando está disponible. La vista previa conserva la carátula completa. La captura muestra el diseño sin conexión a las fuentes de arte.
+
+![Cajas de colección](docs/spines-physical.png)

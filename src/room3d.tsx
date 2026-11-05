@@ -48,20 +48,19 @@ function disposeTree(root: THREE.Object3D) {
 function spineTexture(game: Game, favorite: boolean,art?:Artwork) {
   const canvas = document.createElement('canvas'); canvas.width=192; canvas.height=1024;
   const c = canvas.getContext('2d')!;c.scale(2,2);c.imageSmoothingQuality='high';
-  c.fillStyle=game.color; c.fillRect(0,0,96,512);
+  // A printed paper insert inside a dark plastic case, inspired by physical PC boxes.
+  const light=game.id%3!==0;
+  c.fillStyle=light?'#deddd4':'#25282b';c.fillRect(0,0,96,512);
   if(art){
     const aw='naturalWidth' in art?art.naturalWidth:art.width,ah='naturalHeight' in art?art.naturalHeight:art.height;
-    const scale=Math.max(96/aw,512/ah),w=aw*scale,h=ah*scale;
-    c.drawImage(art,(96-w)/2,(512-h)/2,w,h);
-    c.fillStyle='#07101655';c.fillRect(0,0,96,512);
-  }
-  const gradient=c.createLinearGradient(0,0,96,0);
-  gradient.addColorStop(0,'#0009');gradient.addColorStop(.3,'#ffffff18');gradient.addColorStop(1,'#0008');c.fillStyle=gradient;c.fillRect(0,0,96,512);
-  c.fillStyle='#071119d9';c.fillRect(22,60,54,403);
-  c.fillStyle='#152439';c.fillRect(0,0,96,48);c.fillStyle='#ddd';c.font='bold 23px sans-serif';c.textAlign='center';c.fillText('PC',48,33);
-  c.save();c.translate(58,265);c.rotate(Math.PI/2);c.fillStyle='#fff2df';c.font='bold 28px sans-serif';c.fillText(game.title.toLocaleUpperCase(),0,0,375);c.restore();
-  if(favorite){c.fillStyle='#f9d788';c.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5;const r=i%2?5:11;const x=79+Math.cos(a)*r,y=23+Math.sin(a)*r;i?c.lineTo(x,y):c.moveTo(x,y);}c.closePath();c.fill();}
-  c.fillStyle=game.installed?'#a5cfa4':'#676963';c.beginPath();c.arc(48,480,6,0,Math.PI*2);c.fill();
+    const scale=Math.max(26/aw,416/ah),w=aw*scale,h=ah*scale;
+    c.save();c.beginPath();c.rect(67,50,26,416);c.clip();c.drawImage(art,67+(26-w)/2,50+(416-h)/2,w,h);c.restore();
+  }else{c.fillStyle=game.color;c.fillRect(78,50,15,416);}
+  const edge=c.createLinearGradient(0,0,96,0);edge.addColorStop(0,'#0008');edge.addColorStop(.12,'#0001');edge.addColorStop(.8,'#fff1');edge.addColorStop(1,'#0008');c.fillStyle=edge;c.fillRect(0,0,96,512);
+  c.fillStyle='#172d4f';c.fillRect(0,0,96,48);c.fillStyle='#f1f4f6';c.font='bold 22px sans-serif';c.textAlign='center';c.fillText('PC',48,32);
+  c.save();c.translate(45,259);c.rotate(Math.PI/2);c.fillStyle=light?'#141619':'#f0eee6';c.font='bold 27px sans-serif';c.fillText(game.title.toLocaleUpperCase(),0,0,372);c.restore();
+  c.fillStyle='#172d4f';c.fillRect(0,474,96,38);
+  if(favorite){c.fillStyle='#e9c47b';c.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5;const r=i%2?5:10;const x=79+Math.cos(a)*r,y=23+Math.sin(a)*r;i?c.lineTo(x,y):c.moveTo(x,y);}c.closePath();c.fill();}
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=4;
   return texture;
 }
@@ -286,7 +285,7 @@ class RoomEngine {
         for(let i=0;i<this.slots.length;i++){
           const slot=this.slots[i],game=p.ranked[i],favorite=p.favorites.includes(game.id);
           slot.plane.material.map?.dispose();slot.plane.material.map=spineTexture(game,favorite);slot.plane.material.needsUpdate=true;
-          (slot.mesh.material as THREE.MeshStandardMaterial).color.set(game.color);
+          (slot.mesh.material as THREE.MeshStandardMaterial).color.set('#18283d');
           void loadArtwork(game).then(art=>{
             if(!art||this.disposed||generation!==this.spineGeneration)return;
             slot.plane.material.map?.dispose();slot.plane.material.map=spineTexture(game,favorite,art);slot.plane.material.needsUpdate=true;
