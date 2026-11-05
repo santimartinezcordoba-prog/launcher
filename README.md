@@ -22,7 +22,7 @@ La compilación comprueba TypeScript y crea `dist/`, incluyendo los modelos. Nin
 
 ## Pantalla principal limpia
 
-La entrada centra la vista en la habitación. Los muebles interactivos muestran un contorno ligero al pasar el ratón. La puerta Sala de colección abre una segunda habitación ampliada, con estanterías por género, Favoritos y Más jugados. La vista principal utiliza la primera sala 3D ampliada, con su suelo, paredes y techo. Favoritos y Más jugados están en la pared del fondo, frente a la entrada. Desde allí se puede abrir la biblioteca completa o filtrada por género. Pulsa el ordenador para abrir la biblioteca, los ajustes, las misiones y el inventario. Ctrl+K abre la búsqueda y Escape vuelve atrás. Los controles de teclado de los muebles solo se muestran al recibir foco.
+La entrada centra la vista en la habitación. Los muebles interactivos muestran un contorno ligero al pasar el ratón. La puerta Sala de colección abre una segunda habitación ampliada, con estanterías por género, Favoritos y Más jugados. La vista principal es una sala 3D con estanterías modulares en una pared en abanico, con poco fondo y distintas alturas. Favoritos y Más jugados están en el tramo central, frente a la entrada. Desde allí se puede abrir la biblioteca completa o filtrada por género. Pulsa el ordenador para abrir la biblioteca, los ajustes, las misiones y el inventario. Ctrl+K abre la búsqueda y Escape vuelve atrás. Los controles de teclado de los muebles solo se muestran al recibir foco.
 
 La personalización se desbloquea con un **kit de 75 puntos**, disponible en los ajustes del ordenador y en la tienda. El kit es una compra única; los cambios de ambiente, paredes y sábanas quedan incluidos. Los puntos siguen siendo locales de demostración.
 
@@ -248,3 +248,14 @@ La vista general calcula la posición de la cámara a partir de las ocho esquina
 Validación: ocho pruebas de navegador y repetición de la comprobación del encuadre final. Para cada uno de los catorce muebles se verifica que sus límites proyectados están dentro de la imagen, con márgenes, a 1600 × 770, 1600 × 900 y 1024 × 650. También se comprueban Acción y Cooperativo en los laterales, Favoritos y Más jugados en la pared del fondo, las ocho portadas y los filtros de biblioteca. Compilación de producción correcta. La captura usa portadas de prueba inyectadas por Playwright:
 
 ![Las catorce estanterías completas en el encuadre](docs/collection-complete-frame.png)
+
+
+## Todas las portadas visibles y más grandes (0.6.4)
+
+La distribución deja de ser un pasillo largo. Las catorce estanterías se reparten en cinco paños poco profundos, orientados hacia la entrada y aprovechando la altura como una pared de biblioteca. Los géneros con hasta cuatro juegos utilizan un módulo bajo; los que necesitan dos filas usan uno alto. Cada módulo admite hasta ocho portadas y se amplía cuando aumenta su colección. Favoritos y Más jugados permanecen en el paño central; Acción queda a la izquierda y Cooperativo a la derecha.
+
+El campo de visión utiliza la pantalla para mostrar los muebles y sus juegos, conservando suelo, paredes y techo 3D. Al pasar el ratón por una portada se abre una ampliación con su título; esta ampliación no redibuja el escenario. Solo aparece al mover el ratón sobre un juego, evitando que se abra automáticamente al entrar por la puerta. Los acercamientos, la biblioteca filtrada, los favoritos y el orden por horas siguen disponibles.
+
+Validación: compilación de producción y ocho pruebas de navegador. La vista general a 1600 × 770 muestra las 66 portadas de las catorce secciones; se mide cada imagen y la más pequeña tiene aproximadamente 68 × 103 píxeles. Se verifican también el encuadre a otros tamaños, la ampliación por ratón sin render 3D adicional, ocho juegos al acercarse, filtros, favoritos, más jugados y recuperación sin WebGL. La captura utiliza portadas de prueba inyectadas por Playwright:
+
+![Sala en abanico con todas las portadas visibles](docs/collection-readable-room.png)

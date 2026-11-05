@@ -1,7 +1,7 @@
 import {games,type Game} from './games';
 
 export const shelfCapacity=8;
-export const shelfWidth=3.4;
+export const shelfWidth=3.3;
 export const genreGroups=[...new Set(games.map(g=>g.genre))]
  .sort((a,b)=>a.localeCompare(b,'es'))
  .map(genre=>({id:genre,title:genre,genre,games:games.filter(g=>g.genre===genre)}));
@@ -13,12 +13,24 @@ export function collectionShelves(favorites:number[]):ShelfGroup[]{
   {id:'most-played',title:'Más jugados',collection:'most-played',games:[...games].sort((a,b)=>b.hours-a.hours||a.title.localeCompare(b.title,'es'))}
  ];
 }
-// Four shelves on the back wall; Acción and Cooperativo move to the side walls.
-export function shelfPosition(index:number):[number,number,number,number]{
- const left=[0,4,5,6,7],right=[3,8,9,10,11];
- if(left.includes(index))return [-7.35,0,-7.95+left.indexOf(index)*3.75,Math.PI/2];
- if(right.includes(index))return [7.35,0,-7.95+right.indexOf(index)*3.75,-Math.PI/2];
- if(index===1)return [-5.325,0,-10.35,0];
- if(index===2)return [5.325,0,-10.35,0];
- return [index===12?-1.775:1.775,0,-10.35,0];
+export const baySpacing=3.36;
+export const cameraDistance=35;
+export type ShelfPlacement={bay:number;position:[number,number,number];rotation:number;height:number;rows:number};
+export function bayPosition(bay:number):[number,number,number]{
+ const angle=(bay-2)*baySpacing/cameraDistance;
+ return [Math.sin(angle)*cameraDistance,Math.cos(angle)*-cameraDistance+cameraDistance,-angle];
+}
+// Stack modular shelves along five shallow wall facets, all turned towards the entrance.
+export function arrangeShelves(groups:ShelfGroup[]):ShelfPlacement[]{
+ const heights=Array(5).fill(0),placed=new Map<number,ShelfPlacement>();
+ const put=(index:number,bay:number)=>{
+  const rows=Math.min(shelfCapacity,groups[index].games.length)>4?2:1,height=rows===2?2.72:1.45;
+  const [x,z,rotation]=bayPosition(bay),y=heights[bay];
+  placed.set(index,{bay,position:[x,y,z],rotation,height,rows});heights[bay]+=height+.24;
+ };
+ put(12,2);put(13,2);put(0,1);put(3,4);
+ const remaining=groups.map((_,index)=>index).filter(index=>!placed.has(index)).sort((a,b)=>Number(groups[b].games.length>4)-Number(groups[a].games.length>4)||a-b);
+ const priority=[0,4,3,1,2];
+ for(const index of remaining){const bay=[...priority].sort((a,b)=>heights[a]-heights[b])[0];put(index,bay);}
+ return groups.map((_,index)=>placed.get(index)!);
 }
