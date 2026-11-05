@@ -22,7 +22,7 @@ La compilación comprueba TypeScript y crea `dist/`, incluyendo los modelos. Nin
 
 ## Pantalla principal limpia
 
-La entrada centra la vista en la habitación. Los muebles interactivos muestran un contorno ligero al pasar el ratón. La puerta Sala de colección abre una segunda habitación con estanterías por género y portadas de frente. Desde allí se puede abrir la biblioteca completa o filtrada por género. Pulsa el ordenador para abrir la biblioteca, los ajustes, las misiones y el inventario. Ctrl+K abre la búsqueda y Escape vuelve atrás. Los controles de teclado de los muebles solo se muestran al recibir foco.
+La entrada centra la vista en la habitación. Los muebles interactivos muestran un contorno ligero al pasar el ratón. La puerta Sala de colección abre una segunda habitación ampliada, con estanterías por género, Favoritos y Más jugados. Su vista general muestra todos los muebles de frente y permite desplazarse para verlos. Desde allí se puede abrir la biblioteca completa o filtrada por género. Pulsa el ordenador para abrir la biblioteca, los ajustes, las misiones y el inventario. Ctrl+K abre la búsqueda y Escape vuelve atrás. Los controles de teclado de los muebles solo se muestran al recibir foco.
 
 La personalización se desbloquea con un **kit de 75 puntos**, disponible en los ajustes del ordenador y en la tienda. El kit es una compra única; los cambios de ambiente, paredes y sábanas quedan incluidos. Los puntos siguen siendo locales de demostración.
 
@@ -31,7 +31,7 @@ El inventario ofrece Colocar o Mover objeto. La cámara pasa a una vista cenital
 ## Qué puedes probar
 
 - Pulsar el ordenador o cualquier parte del setup para abrir ajustes, tienda, misiones e inventario.
-- Entrar por la puerta en la sala de colección, elegir un género y seleccionar sus portadas frontales. Se muestran hasta cuatro por estantería; los demás están en la biblioteca filtrada.
+- Entrar por la puerta en la sala de colección, elegir un género y seleccionar sus portadas frontales. La vista general ofrece dos portadas grandes por mueble; al acercarte aparecen hasta ocho. Los demás juegos están en la biblioteca filtrada.
 - Abrir Mis platinos desde el ordenador. Las fichas incluyen progreso y logros.
 - Volver con Escape: ficha → sala de colección → entrada. Ctrl+K abre el buscador.
 - Buscar entre 60 juegos de ejemplo y filtrar por tienda, género, instalación o favoritos.
@@ -194,3 +194,18 @@ Capturas de 0.5.0 con las descargas de imágenes externas bloqueadas para compro
 | Vista de la sala | Estantería de un género |
 | --- | --- |
 | ![Sala por géneros](docs/collection-overview.png) | ![Portadas frontales y acceso al género](docs/collection-genre.png) |
+
+
+## Estanterías ampliadas y vista frontal (0.6.0)
+
+La sala pasa a 19,6 × 21 m y los muebles a unos 4,24 m de ancho, con capacidad para ocho cajas en dos filas. Se incorporan dos estanterías en la zona central: Favoritos y Más jugados. Favoritos utiliza las estrellas guardadas y se actualiza al cambiarlas desde una ficha; Más jugados ordena por las horas del catálogo, que siguen siendo datos de ejemplo. Sus botones Biblioteca abren respectivamente el filtro Favoritos y el catálogo ordenado por Más jugados.
+
+La vista general elegida es frontal y tiene desplazamiento vertical. Ofrece las catorce estanterías, con las dos centrales al principio. Cada previsualización muestra dos portadas grandes; Ver estantería muestra hasta ocho y mantiene el acceso al catálogo completo de esa sección. El encuadre se adapta a la ventana sin ocultar las cajas por un umbral de píxeles, por lo que entrar o salir de F11 no cambia qué juegos aparecen. Las imágenes se precargan al entrar la estantería en la zona visible. La vista general usa un solo canvas con cámaras frontales, se renderiza al cambiar contenido o tamaño y conserva la resolución original de las portadas HTML. Se limita la resolución del fondo 3D para acotar la memoria de vistas largas.
+
+Validación: compilación de producción y ocho pruebas de navegador. Incluyen entrada a 1600 × 770 sin redimensionar, recorrido de las catorce estanterías, carga de sus imágenes, cambio a 1600 × 900 y vuelta, ventana compacta, favoritos que cambian al quitar estrellas, orden de más jugados, biblioteca filtrada, inventario y recuperación sin WebGL. Se usa una ilustración de prueba para verificar la carga y el encuadre; las fuentes reales de carátulas siguen dependiendo de sus servidores externos.
+
+Capturas de validación con ilustraciones de prueba inyectadas únicamente por Playwright:
+
+![Vista frontal con Favoritos y Más jugados](docs/collection-frontal.png)
+
+![Estantería ampliada de Más jugados](docs/collection-expanded.png)
