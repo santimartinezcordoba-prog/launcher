@@ -6,7 +6,7 @@ test('misión, compra sin duplicados, inventario y persistencia',async({page})=>
  await expect(page.getByTestId('points')).toHaveText('0');
  await expect(page.getByRole('button',{name:'Comprar · 100 puntos'})).toBeDisabled();
  await page.keyboard.press('Escape');
- await page.getByRole('button',{name:'Acercarse a la estantería'}).press('Enter');
+ await page.getByRole('button',{name:'Entrar en la sala de colección'}).press('Enter');
  await page.keyboard.press('Escape');
  await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
  await page.getByRole('button',{name:'Misiones',exact:true}).click();

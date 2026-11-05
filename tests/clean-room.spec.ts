@@ -1,11 +1,11 @@
 import {test,expect} from '@playwright/test';
 import {chooseFloor,chooseShelf} from './editor-helpers';
 
-test('contorno uniforme sin render extra y buscador junto a la estantería',async({page})=>{
+test('contorno de puerta sin render extra y biblioteca desde la sala',async({page})=>{
  await page.goto('/');const room=page.getByTestId('room-3d');
  await expect(room).toHaveAttribute('data-rendered','true');await expect(room).toHaveAttribute('data-motion','idle');
  await expect(page.locator('.welcome,.room-hover')).toHaveCount(0);
- await expect(page.getByRole('button',{name:'Acercarse a la estantería'})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Entrar en la sala de colección'})).toBeVisible();
  const frame=await room.getAttribute('data-frame');
  const tag=(await page.locator('[data-anchor="shelf"]').boundingBox())!;
  await room.locator('canvas').dispatchEvent('pointermove',{clientX:tag.x+tag.width/2,clientY:tag.y+tag.height/2});
@@ -13,8 +13,8 @@ test('contorno uniforme sin render extra y buscador junto a la estantería',asyn
  await expect(page.locator('.interaction-outline')).toBeVisible();
  expect((await page.locator('.interaction-outline polygon').getAttribute('points'))!.split(' ')).toHaveLength(4);
  await expect(room).toHaveAttribute('data-frame',frame!);
- await page.getByRole('button',{name:'Acercarse a la estantería'}).press('Enter');
- await page.getByRole('button',{name:'Abrir biblioteca',exact:true}).click();
+ await page.getByRole('button',{name:'Entrar en la sala de colección'}).press('Enter');
+ await page.getByRole('button',{name:'Biblioteca completa',exact:true}).click();
  await expect(page.getByRole('textbox',{name:'Buscar en mi biblioteca'})).toBeVisible();
  const width=await page.locator('.library').evaluate(el=>el.getBoundingClientRect().width);
  expect(width).toBeGreaterThan(900);

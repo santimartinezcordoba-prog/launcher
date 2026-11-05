@@ -1,6 +1,6 @@
 # Mi habitación
 
-Prototipo de launcher para Windows con una habitación **3D real** construida en Blender a partir de los modelos proporcionados. La cámara parte de la entrada y se acerca a la biblioteca. El escenario utiliza `public/models/room.glb`; la antigua imagen `public/room.png` se conserva únicamente como referencia.
+Prototipo de launcher para Windows con una habitación **3D real** construida en Blender a partir de los modelos proporcionados. La cámara parte de la entrada y una puerta conduce a una sala de colección por géneros. El escenario utiliza `public/models/room.glb`; la antigua imagen `public/room.png` se conserva únicamente como referencia.
 
 ## Desarrollo
 
@@ -22,18 +22,18 @@ La compilación comprueba TypeScript y crea `dist/`, incluyendo los modelos. Nin
 
 ## Pantalla principal limpia
 
-La entrada centra la vista en la habitación. Los muebles interactivos muestran un contorno ligero al pasar el ratón. Al acercarte a la estantería aparece un botón Biblioteca, que abre la galería completa. La vista general no muestra ese botón. Pulsa el ordenador para abrir la biblioteca, los ajustes, las misiones y el inventario. Ctrl+K abre la búsqueda y Escape vuelve atrás. Los controles de teclado de los muebles solo se muestran al recibir foco.
+La entrada centra la vista en la habitación. Los muebles interactivos muestran un contorno ligero al pasar el ratón. La puerta Sala de colección abre una segunda habitación con estanterías por género y portadas de frente. Desde allí se puede abrir la biblioteca completa o filtrada por género. Pulsa el ordenador para abrir la biblioteca, los ajustes, las misiones y el inventario. Ctrl+K abre la búsqueda y Escape vuelve atrás. Los controles de teclado de los muebles solo se muestran al recibir foco.
 
 La personalización se desbloquea con un **kit de 75 puntos**, disponible en los ajustes del ordenador y en la tienda. El kit es una compra única; los cambios de ambiente, paredes y sábanas quedan incluidos. Los puntos siguen siendo locales de demostración.
 
-El inventario ofrece Colocar o Mover objeto. La cámara pasa a una vista cenital con cuadrícula de 20 cm para el suelo. Las baldas se editan de frente, a pasos de 5 cm. Escritorio, mesilla y armario también admiten colocación en superficie. Los botones de giro avanzan 15°. Hay que confirmar Guardar posición; cancelar descarta la propuesta. Se comprueban límites, muebles existentes y solapamiento entre objetos mediante huellas rectangulares conservadoras. Las posiciones antiguas se migran a coordenadas al cargar. Se venden una planta, un taburete y una mesa auxiliar, además de los objetos anteriores.
+El inventario ofrece Colocar o Mover objeto. La cámara pasa a una vista cenital con cuadrícula de 20 cm para el suelo. Las baldas se editan de frente, a pasos de 5 cm. Escritorio, mesilla y muebles comprados también admiten colocación en superficie. Los botones de giro avanzan 15°. Hay que confirmar Guardar posición; cancelar descarta la propuesta. Se comprueban límites, muebles existentes y solapamiento entre objetos mediante huellas rectangulares conservadoras. Las posiciones antiguas se migran a coordenadas al cargar. Se venden una planta, un taburete y una mesa auxiliar, además de los objetos anteriores.
 
 ## Qué puedes probar
 
 - Pulsar el ordenador o cualquier parte del setup para abrir ajustes, tienda, misiones e inventario.
-- Acercarte a la estantería y seleccionar cualquiera de los 50 juegos. Los favoritos tienen prioridad; los huecos restantes se ordenan por horas de juego de ejemplo. Los lomos y estrellas se actualizan sobre las cajas 3D.
-- Abrir la colección de platinos desde los trofeos del armario. Las fichas incluyen progreso y logros.
-- Volver con Escape: ficha → estantería → entrada. Ctrl+K abre el buscador.
+- Entrar por la puerta en la sala de colección, elegir un género y seleccionar sus portadas frontales. Se muestran hasta cuatro por estantería; los demás están en la biblioteca filtrada.
+- Abrir Mis platinos desde el ordenador. Las fichas incluyen progreso y logros.
+- Volver con Escape: ficha → sala de colección → entrada. Ctrl+K abre el buscador.
 - Buscar entre 60 juegos de ejemplo y filtrar por tienda, género, instalación o favoritos.
 - Completar misiones, reclamar sus puntos una sola vez, comprar objetos y colocarlos o guardarlos. El patito y la figura del mago utilizan tus GLB importados. El gato, cristal y robot son modelos 3D provisionales creados por la aplicación.
 - Cambiar ambiente, color de paredes y ropa de cama. Los cambios afectan a materiales e iluminación 3D. Las preferencias, el inventario y los favoritos se guardan localmente en el navegador.
@@ -71,7 +71,7 @@ La escena se renderiza bajo demanda: vuelve a dibujar al mover la cámara, cambi
 
 Los juegos, las horas, la instalación, los requisitos y los trofeos son **datos de demostración**, no una lectura del ordenador o las cuentas. Las portadas son provisionales. Jugar y Descargar muestran un aviso; no ejecutan procesos ni descargan juegos. Verifica los requisitos en la fuente oficial antes de utilizarlos como información real.
 
-Steam, Epic, Ubisoft, Xbox/Game Pass, EA, Battle.net, Riot y GOG aún no están conectados. El platino es una distinción de esta aplicación al completar su lista de ejemplo, no un trofeo oficial sincronizado.
+Steam, Epic, Ubisoft, Xbox/Game Pass, EA, Battle.net, Riot y CD PROJEKT RED aún no están vinculados. CD PROJEKT RED ofrece accesos a su portal oficial de cuenta. El platino es una distinción de esta aplicación al completar su lista de ejemplo, no un trofeo oficial sincronizado.
 
 Los puntos son locales y no tienen valor monetario. Comprar puntos con dinero no está habilitado, no se solicitan credenciales y no se realizan cobros. El backend de cuentas, las integraciones de tiendas, la detección y apertura de juegos y los pagos reales son etapas futuras.
 
@@ -176,3 +176,21 @@ Los lomos tienen un inserto claro u oscuro, bandas azules y texto vertical de al
 ![Cajas de colección](docs/spines-physical.png)
 
 En la versión 0.4.3 todos los lomos usan un fondo oscuro con texto claro. La franja sigue mostrando arte cuando se puede cargar; no representa el diseño original del lomo físico.
+
+
+## Sala de colección y cuenta RED (0.5.0)
+
+La estantería principal y sus juegos desaparecen del dormitorio. Una puerta abre una nueva sala 3D con doce estanterías, una por cada género de los 60 juegos de demostración. Las cajas se muestran de frente, con un máximo de cuatro por estantería. Seleccionar un rótulo o el selector de géneros acerca la cámara a esa estantería. Si una portada mide menos de 65 × 98 píxeles en pantalla, se oculta en lugar de mostrar una miniatura ilegible. El pie de la vista de género ofrece Ver biblioteca de ese género; abre el catálogo completo, restablece los otros filtros y mantiene solo el género elegido. Biblioteca completa y Ctrl+K siguen disponibles.
+
+La sala usa geometría ligera y madera local. La imagen se actualiza al cambiar cámara, tamaño o texturas; señalar una portada no redibuja el 3D. Las portadas mantienen su proporción y se proyectan sobre la cara frontal de cada caja. Requieren acceso a sus CDN; si fallan, aparece la ilustración local con el nombre del juego. Los adornos colocados sobre el armario retirado vuelven al inventario, conservando su propiedad y los puntos. Mis platinos pasa al menú del ordenador.
+
+GOG se sustituye en la interfaz por CD PROJEKT RED. Los ejemplos de The Witcher 3 y Cyberpunk 2077 se agrupan en esa plataforma; Disco Elysium queda en Steam. Crear cuenta e Iniciar sesión abren `https://accounts.cdprojektred.com/` en el navegador del sistema, donde se elige el flujo correspondiente. No se capturan credenciales, no se simula una sesión iniciada y no se sincronizan cuentas ni bibliotecas. Para vincular RED al launcher sigue siendo necesaria una integración oficial de autenticación. El acceso de red a ese portal no pudo verificarse desde este entorno.
+
+
+Capturas de 0.5.0 con las descargas de imágenes externas bloqueadas para comprobar la reserva sin conexión:
+
+![Puerta de la sala de colección](docs/bedroom-door.png)
+
+| Vista de la sala | Estantería de un género |
+| --- | --- |
+| ![Sala por géneros](docs/collection-overview.png) | ![Portadas frontales y acceso al género](docs/collection-genre.png) |

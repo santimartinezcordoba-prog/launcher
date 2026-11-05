@@ -1,4 +1,4 @@
-export const stores = ['Steam', 'Epic Games', 'Ubisoft Connect', 'Xbox / Game Pass', 'EA', 'Battle.net', 'Riot Games', 'GOG'] as const;
+export const stores = ['Steam', 'Epic Games', 'Ubisoft Connect', 'Xbox / Game Pass', 'EA', 'Battle.net', 'Riot Games', 'CD PROJEKT RED'] as const;
 export type Store = typeof stores[number];
 export type Game = { id: number; title: string; store: Store; genre: string; installed: boolean; hours: number; color: string; year: number; synopsis: string; requirements: string[]; familyOwner?: string };
 const titles = [
@@ -32,7 +32,7 @@ function storeFor(i: number): Store {
   if(i>=20 && i<=23) return 'Riot Games';
   if(i>=24 && i<=27) return 'Ubisoft Connect';
   if(i>=28 && i<=31) return 'Epic Games';
-  if(i===32 || i===12) return 'GOG';
+  if(i===5 || i===12) return 'CD PROJEKT RED';
   return 'Steam';
 }
 export const games: Game[] = titles.map(([title,genre],id)=>({

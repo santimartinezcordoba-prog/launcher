@@ -221,6 +221,20 @@ class RoomEngine {
         this.slots.forEach((slot,i)=>{const d=slot.bounds.getCenter(new THREE.Vector3()).distanceToSquared(center);if(d<distance){distance=d;best=i;}});
         node.userData.hit={kind:'game',slot:best};
       });
+      // The bedroom now leads to a separate collection room; remove the old cabinet and its contents.
+      this.root.traverse(node=>{
+        let current:THREE.Object3D|null=node,remove=false;
+        while(current){const asset=String(current.userData.source_asset??'').toLowerCase();if(asset==='cupboard_01.blend'||asset==='trophy.fbx'||typeof current.userData.game_id==='number')remove=true;current=current.parent;}
+        if(remove||/banda pc|rotulo|placa platinos/.test(normalName(node.name))){node.visible=false;delete node.userData.hit;}
+      });
+      for(const slot of this.slots){slot.plane.visible=false;delete slot.plane.userData.hit;}
+      this.slots=[];
+      const door=new THREE.Group();door.name='Puerta de la sala de colección';door.position.set(.2,0,-3.45);this.scene.add(door);
+      const frameMat=new THREE.MeshStandardMaterial({color:'#ad9062',roughness:.65}),panelMat=new THREE.MeshStandardMaterial({color:'#324d44',roughness:.7}),metal=new THREE.MeshStandardMaterial({color:'#dec08a',metalness:.65,roughness:.3});
+      const part=(x:number,y:number,z:number,w:number,h:number,d:number,material:THREE.Material)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.hit={kind:'shelf'};door.add(mesh);};
+      part(0,1.3,0,1.35,2.6,.12,panelMat);for(const x of [-.73,.73])part(x,1.34,0,.11,2.75,.2,frameMat);part(0,2.7,0,1.57,.11,.2,frameMat);
+      part(.48,1.18,.12,.08,.22,.05,metal);part(.4,1.18,.16,.25,.04,.04,metal);
+      for(const y of [.7,1.9])part(0,y,.075,1.08,.72,.035,frameMat);
       this.cacheInteractionTargets();
       this.mergeFloor();
       const floatingPoint=this.renderer.extensions.has('EXT_color_buffer_float');
@@ -431,7 +445,6 @@ class RoomEngine {
     if(selectSurface&&edit.surface==='floor'&&!furniture[edit.id]){
       for(const name of ['table','stool'] as const){const area=surfaceArea(name,this.read().arranged);if(area&&this.read().equipped.includes(name)&&Math.abs(point.x-area.x)<area.width/2&&Math.abs(point.z-area.z)<area.depth/2){this.read().onSurface(name);return;}}
       if(point.x>2.85&&point.z>-2.6&&point.z<-.8){this.read().onSurface('shelves');return;}
-      if(point.x>-.85&&point.x<1.2&&point.z< -2.9){this.read().onSurface('cabinet');return;}
       if(point.x>2.05&&point.x<2.46&&point.z> -2.95&&point.z< -2.48){this.read().onSurface('desk');return;}
       if(point.x< -2.4&&point.z> -2.2&&point.z< -1.6){this.read().onSurface('nightstand');return;}
     }
@@ -526,7 +539,7 @@ class RoomEngine {
     element.style.visibility=v.z>1||v.z<0||Math.abs(v.x)>1||Math.abs(v.y)>1?'hidden':'visible';
   }
   anchors(){
-    const anchors:[string,THREE.Vector3][]=[['shelf',new THREE.Vector3(.2,.1,-2.95)],['computer',new THREE.Vector3(2.7,.85,-1.85)],['trophies',new THREE.Vector3(.2,2.42,-3.2)],['library',new THREE.Vector3(.2,-.12,-2.9)],['edit-shelves',new THREE.Vector3(3,2.46,-1.7)],['edit-desk',new THREE.Vector3(2.26,.8,-2.71)],['edit-nightstand',new THREE.Vector3(-2.74,.685,-1.91)],['edit-cabinet',new THREE.Vector3(.2,2.34,-3.2)]];
+    const anchors:[string,THREE.Vector3][]=[['shelf',new THREE.Vector3(.2,1.55,-3.28)],['computer',new THREE.Vector3(2.7,.85,-1.85)],['trophies',new THREE.Vector3(.2,2.42,-3.2)],['library',new THREE.Vector3(.2,-.12,-2.9)],['edit-shelves',new THREE.Vector3(3,2.46,-1.7)],['edit-desk',new THREE.Vector3(2.26,.8,-2.71)],['edit-nightstand',new THREE.Vector3(-2.74,.685,-1.91)],['edit-cabinet',new THREE.Vector3(.2,2.34,-3.2)]];
     for(const id of ['table','stool'] as const){const area=surfaceArea(id,this.read().arranged);if(area)anchors.push([`edit-${id}`,new THREE.Vector3(area.x,area.y,area.z)]);}
     const shelf=this.hoverTargets.find(t=>t.hit.kind==='shelf')?.bounds;if(shelf){const library=anchors.find(([id])=>id==='library')!;library[1].set((shelf.min.x+shelf.max.x)/2,shelf.min.y-.12,shelf.max.z+.08);}
     for(const [id,point] of anchors){const el=this.host.parentElement?.querySelector<HTMLElement>(`[data-anchor="${id}"]`);if(el)this.project(el,point);}
@@ -615,14 +628,14 @@ export function Room3D(props:Props){
       {status==='loading'&&<div className="room-load" role="status"><span className="load-orbit"/><strong>Preparando tu habitación</strong><p>Cargando los modelos 3D…</p></div>}
       {status==='error'&&<div className="room-load" role="alert"><strong>No se pudo abrir la habitación 3D</strong><p>Comprueba la aceleración gráfica del navegador y vuelve a intentarlo.</p><button className="primary-button" onClick={()=>setRetry(v=>v+1)}>Reintentar</button><button className="quiet-button" onClick={props.onLibrary}>Abrir biblioteca</button></div>}
       {status==='ready'&&!props.editor&&props.view==='room'&&<nav className="room-object-actions keyboard-object-actions" aria-label="Objetos de la habitación">
-        <button data-anchor="shelf" aria-label="Acercarse a la estantería" onClick={props.onShelf}>Explorar estantería <span>↗</span></button>
+        <button data-anchor="shelf" aria-label="Entrar en la sala de colección" onClick={props.onShelf}>Sala de colección <span>↗</span></button>
         <button data-anchor="computer" aria-label="Abrir ajustes desde el ordenador" onClick={props.onComputer}>Mi ordenador <span>↗</span></button>
         <button data-anchor="trophies" aria-label="Ver estantería de platinos" onClick={props.onTrophies}>Mis platinos <span>↗</span></button>
       </nav>}
       {status==='ready'&&!props.editor&&props.view==='shelf'&&<nav className="three-game-actions" aria-label="Juegos de la estantería">{props.ranked.map((g,i)=><button key={i} className="case three-game-hit" data-slot={i} data-game-id={g.id} aria-label={`Ver ${g.title}`} title={g.title} onPointerEnter={()=>{engine.current?.hoverGame(i);setPreview(i);}} onPointerLeave={()=>{engine.current?.hoverGame();setPreview(null);}} onFocus={()=>setPreview(i)} onBlur={()=>setPreview(null)} onClick={()=>props.onGame(g)}><span className="sr-only">{g.title}</span></button>)}</nav>}
 
       {status==='ready'&&!props.editor&&props.view==='shelf'&&<button className="shelf-search-access" data-anchor="library" onClick={props.onLibrary} aria-label="Abrir biblioteca"><BookOpen size={15}/> Biblioteca</button>}
-      {status==='ready'&&props.editor&&props.editor.surface==='floor'&&!furniture[props.editor.id]&&<nav className="editor-surfaces" aria-label="Elegir superficie">{(['shelves','desk','nightstand','cabinet',...(props.equipped.includes('table')?['table']:[]),...(props.equipped.includes('stool')?['stool']:[])] as Surface[]).map(surface=><button key={surface} data-anchor={`edit-${surface}`} onClick={()=>props.onSurface(surface)}>{surfaceNames[surface]}</button>)}</nav>}
+      {status==='ready'&&props.editor&&props.editor.surface==='floor'&&!furniture[props.editor.id]&&<nav className="editor-surfaces" aria-label="Elegir superficie">{(['shelves','desk','nightstand',...(props.equipped.includes('table')?['table']:[]),...(props.equipped.includes('stool')?['stool']:[])] as Surface[]).map(surface=><button key={surface} data-anchor={`edit-${surface}`} onClick={()=>props.onSurface(surface)}>{surfaceNames[surface]}</button>)}</nav>}
       {props.view==='shelf'&&!props.editor&&!props.blocked&&preview!==null&&props.ranked[preview]&&<aside className="shelf-game-preview" aria-label="Carátula del juego señalado"><div className="preview-poster"><GameArt key={props.ranked[preview].id} game={props.ranked[preview]}/></div><strong>{props.ranked[preview].title}</strong><small>{props.ranked[preview].store} · {props.ranked[preview].installed?'Instalado':'Sin instalar'}</small></aside>}
       <div className="equipped-status sr-only" aria-label="Objetos colocados">{props.equipped.map(id=><span className={`placed-${id}`} key={id}>{id}</span>)}</div>
     </div>

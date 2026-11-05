@@ -1,22 +1,23 @@
 import { test, expect } from '@playwright/test';
 
-test('habitación: 50 lomos, acercamiento, ficha y vuelta con Escape', async ({page})=>{
+test('habitación: puerta, colección, ficha y vuelta con Escape', async ({page})=>{
   const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
   await page.goto('/');
   await expect(page.locator('main')).toHaveClass(/view-room/);
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-state','ready');
-  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-slots','50');
-  await page.getByRole('button',{name:'Acercarse a la estantería'}).press('Enter');
-  await expect(page.locator('main')).toHaveClass(/view-shelf/);
-  await expect(page.locator('.case')).toHaveCount(50);
-  await page.locator('.case').first().click();
+  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-slots','0');
+  await page.getByRole('button',{name:'Entrar en la sala de colección'}).press('Enter');
+  await expect(page.locator('main')).toHaveClass(/view-collection/);
+  await page.getByLabel('Elegir estantería por género').selectOption({label:'Acción'});
+  await expect(page.getByTestId('collection-room')).toHaveAttribute('data-genre','Acción');
+  await page.getByRole('button',{name:'Ver Hades',exact:true}).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page.getByRole('heading',{name:'Requisitos mínimos',exact:false})).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.keyboard.press('Escape');
   await expect(page.locator('main')).toHaveClass(/view-room/);
-  await expect(page.getByRole('button',{name:'Acercarse a la estantería'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Entrar en la sala de colección'})).toBeVisible();
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-motion','idle');
   await page.mouse.move(10, 450);
   await page.locator('.scene').evaluate(async el=>{await Promise.all(el.getAnimations().map(a=>a.finished.catch(()=>{})));});
@@ -38,7 +39,7 @@ test('buscador, filtros por tienda y género, estado vacío y restablecer',async
   await expect(page.locator('.game-card')).toHaveCount(1);
   await expect(page.locator('.card-details>button')).toHaveText('VALORANT');
 });
-test('favoritos persisten y se fijan en la estantería',async({page})=>{
+test('favoritos persisten en la biblioteca',async({page})=>{
   await page.goto('/');
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-rendered','true');
   await page.keyboard.press('Control+k');
@@ -50,9 +51,7 @@ test('favoritos persisten y se fijan en la estantería',async({page})=>{
   await page.getByRole('navigation',{name:'Filtrar biblioteca'}).getByRole('button',{name:'Favoritos'}).click();
   await expect(page.locator('.game-card')).toHaveCount(5);
   await expect(page.getByRole('button',{name:'Quitar de favoritos: Unpacking'})).toHaveAttribute('aria-pressed','true');
-  await page.keyboard.press('Escape');
-  await page.getByRole('button',{name:'Acercarse a la estantería'}).press('Enter');
-  await expect(page.locator('.case[aria-label="Ver Unpacking"]')).toBeVisible();
+  await expect(page.getByRole('button',{name:'Ver Unpacking',exact:true})).toBeVisible();
 });
 test('juego sin instalar muestra Descargar y explica el estado de demostración',async({page})=>{
   await page.goto('/');
@@ -61,7 +60,7 @@ test('juego sin instalar muestra Descargar y explica el estado de demostración'
   await page.getByRole('textbox',{name:'Buscar en mi biblioteca'}).fill('Red Dead');
   await page.getByRole('button',{name:'Ver Red Dead Redemption 2',exact:true}).click();
   await page.getByRole('button',{name:'Descargar',exact:true}).click();
-  await expect(page.getByRole('dialog').getByRole('status')).toContainText('Vista previa');
+  await expect(page.getByRole('dialog').getByRole('status').filter({hasText:'Vista previa'})).toContainText('Vista previa');
   await expect(page.getByRole('dialog')).toContainText('Las tiendas todavía no están conectadas');
 });
 test('ordenador, opciones de accesibilidad y personalización se conservan',async({page})=>{

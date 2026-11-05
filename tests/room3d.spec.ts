@@ -13,30 +13,15 @@ test('los clics sobre las mallas abren ordenador y trofeos, y la cámara vuelve 
   await canvas.dispatchEvent('click',{clientX:computer.x+computer.width/2,clientY:computer.y+computer.height/2});
   await expect(page.getByRole('dialog',{name:'Ajustes del ordenador'})).toBeVisible();
   await page.keyboard.press('Escape');
-  // Find the cup row through the same raycasting that drives the visible highlight.
-  const trophyTag=(await page.locator('[data-anchor="trophies"]').boundingBox())!;
-  const trophyX=trophyTag.x+trophyTag.width/2;let trophyY=0;
-  for(const offset of [50,60,70,80,90]){
-    const y=trophyTag.y+trophyTag.height/2+offset;
-    await canvas.dispatchEvent('pointermove',{clientX:trophyX,clientY:y});
-    await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>resolve())));
-    if(await room.getAttribute('data-highlight')==='trophies'){trophyY=y;break;}
-  }
-  expect(trophyY).toBeGreaterThan(0);
-  await canvas.dispatchEvent('click',{clientX:trophyX,clientY:trophyY});
+  await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
+  await page.getByRole('button',{name:'Mis platinos',exact:true}).click();
   await expect(page.getByRole('dialog',{name:'Estantería de platinos'})).toBeVisible();
   await page.keyboard.press('Escape');
-  const before=await canvas.screenshot();
-  await page.getByRole('button',{name:'Acercarse a la estantería'}).press('Enter');
-  await expect(page.locator('.three-game-hit').first()).toBeVisible();
-  await expect(room).toHaveAttribute('data-motion','idle');
-  expect(await canvas.screenshot()).not.toEqual(before);
-  const game=(await page.locator('.three-game-hit').first().boundingBox())!;
-  await canvas.dispatchEvent('click',{clientX:game.x+game.width/2,clientY:game.y+game.height/2});
-  await expect(page.getByRole('dialog',{name:'Detalles de Hollow Knight'})).toBeVisible();
-  await page.keyboard.press('Escape');await page.keyboard.press('Escape');
-  await expect(page.getByRole('button',{name:'Acercarse a la estantería'})).toBeVisible();
-  await expect(room).toHaveAttribute('data-motion','idle');
+  const door=(await page.locator('[data-anchor="shelf"]').boundingBox())!;
+  await canvas.dispatchEvent('click',{clientX:door.x+door.width/2,clientY:door.y+door.height/2});
+  await expect(page.getByRole('region',{name:'Sala de colección'})).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button',{name:'Entrar en la sala de colección'})).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -70,37 +55,5 @@ test('si falla el GLB, la biblioteca sigue disponible y permite reintentar',asyn
   await page.unroute('**/models/room.glb');
   await page.getByRole('button',{name:'Reintentar',exact:true}).click();
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-rendered','true');
-  await expect(page.getByRole('button',{name:'Acercarse a la estantería'})).toBeVisible();
-});
-
-
-test('el contorno de juegos cambia sin volver a renderizar la habitación',async({page})=>{
-  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('/');const room=page.getByTestId('room-3d');
-  await expect(room).toHaveAttribute('data-rendered','true');
-  await page.getByRole('button',{name:'Acercarse a la estantería'}).press('Enter');
-  await expect(page.locator('.three-game-hit').first()).toBeVisible();
-  await expect(room).toHaveAttribute('data-motion','idle');
-  await expect(room).toHaveAttribute('data-camera','shelf');
-  await expect(room).toHaveAttribute('data-motion','idle');
-  const result=await page.evaluate(async()=>{
-    const host=document.querySelector('[data-testid="room-3d"]')!;
-    const canvas=host.querySelector('canvas')!;
-    const outline=host.querySelector('polygon')!;
-    const buttons=[...document.querySelectorAll('[data-slot]')].slice(0,12);
-    const frames=host.getAttribute('data-frame');const shapes=new Set<string>();let maxHandlerMs=0;
-    for(const button of buttons){
-      const b=button.getBoundingClientRect();
-      // A burst of events is coalesced; the latest position wins within the next animation frame.
-      for(let n=0;n<8;n++)canvas.dispatchEvent(new PointerEvent('pointermove',{clientX:b.x+b.width/2,clientY:b.y+b.height/2}));
-      await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
-      shapes.add(outline.getAttribute('points')??'');maxHandlerMs=Math.max(maxHandlerMs,Number(host.getAttribute('data-hover-ms')));
-    }
-    const after=host.getAttribute('data-frame');
-    canvas.dispatchEvent(new PointerEvent('pointerleave'));
-    return {frames,after,shapes:shapes.size,maxHandlerMs,hidden:(host.querySelector('svg') as SVGElement).style.display};
-  });
-  expect(result.shapes).toBe(12);expect(result.after).toBe(result.frames);
-  expect(result.maxHandlerMs).toBeLessThan(16);expect(result.hidden).toBe('none');
-  expect(errors).toEqual([]);
+  await expect(page.getByRole('button',{name:'Entrar en la sala de colección'})).toBeVisible();
 });

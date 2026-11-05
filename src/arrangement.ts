@@ -26,7 +26,7 @@ export function moveSupportedItems(id:string,position:Arrangement,arranged:Recor
  }
  return next;
 }
-export const floorObstacles=[{x:-2.02,z:-.85,w:2.28,d:1.7},{x:.2,z:-3.22,w:2.36,d:.54},{x:2.12,z:-1.85,w:2.0,d:2.2},{x:-2.9,z:-2.05,w:.54,d:.5}];
+export const floorObstacles=[{x:-2.02,z:-.85,w:2.28,d:1.7},{x:.2,z:-3.05,w:1.65,d:.9},{x:2.12,z:-1.85,w:2.0,d:2.2},{x:-2.9,z:-2.05,w:.54,d:.5}];
 // Old versions offered desk slots that overlap the PC. Keep existing saves, but use the free patch for new placements.
 export function legacyDeskPosition(p:Arrangement){return p.surface==='desk'&&[p.x,p.y,p.z,p.rotation].every(Number.isFinite)&&p.x>=2.45&&p.x<=3.15&&p.z>=-1.16&&p.z<=-.73&&Math.abs(p.y-.82)<.001;}
 export function legacyArrangement(id:string,placements:Record<string,string>,rotations:Record<string,number>):Arrangement|undefined{

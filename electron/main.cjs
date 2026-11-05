@@ -31,7 +31,7 @@ app.whenReady().then(() => {
     webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true }
   });
   win.webContents.setWindowOpenHandler(({url}) => {
-    try{const u=new URL(url);if(u.protocol==='https:'&&['store.steampowered.com','store.epicgames.com','www.ubisoft.com','www.xbox.com','www.ea.com','shop.battle.net','www.riotgames.com','www.gog.com'].includes(u.hostname))void shell.openExternal(u.href);}catch{}
+    try{const u=new URL(url);if(u.protocol==='https:'&&['store.steampowered.com','store.epicgames.com','www.ubisoft.com','www.xbox.com','www.ea.com','shop.battle.net','www.riotgames.com','accounts.cdprojektred.com','www.thewitcher.com','www.cyberpunk.net'].includes(u.hostname))void shell.openExternal(u.href);}catch{}
     return {action:'deny'};
   });
   win.webContents.on('will-navigate', event => event.preventDefault());

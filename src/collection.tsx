@@ -18,6 +18,7 @@ function load():Save{
   const defaults=['upper-left','upper-center','upper-right','lower-left','lower-center','lower-right'];
   for(const [index,id] of [...equipped].sort((a,b)=>Number(['table','stool'].includes(b))-Number(['table','stool'].includes(a))).entries()){
    const raw=s.arranged?.[id]??legacyArrangement(id,{[id]:s.placements?.[id]??defaults[index%defaults.length]},s.rotations??{});
+   if(raw?.surface==='cabinet')continue;
    if(raw&&['floor','shelves','desk','nightstand','cabinet','table','stool'].includes(raw.surface)&&(!placementError(id,raw,arranged)||legacyDeskPosition(raw)))arranged[id]=raw;
   }
   return {...empty,owned,arranged,equipped:equipped.filter(id=>arranged[id]),claimed:missions.filter(m=>s.claimed?.includes(m.id)).map(m=>m.id),seen:games.filter(g=>s.seen?.includes(g.id)).map(g=>g.id),shelf:s.shelf===true,mood:s.mood===true};
@@ -26,7 +27,7 @@ function load():Save{
 const balance=(s:Save)=>missions.reduce((n,m)=>n+(s.claimed.includes(m.id)?m.reward:0),0)-catalog.reduce((n,c)=>n+(s.owned.includes(c.id)?c.price:0),0);
 export function useCollection(view:string,selected:number|undefined,mood:string){
  const [save,setSave]=useState<Save>(load);
- useEffect(()=>{setSave(s=>({...s,shelf:s.shelf||view==='shelf',mood:s.mood||mood!=='warm',seen:selected===undefined||s.seen.includes(selected)?s.seen:[...s.seen,selected]}));},[view,selected,mood]);
+ useEffect(()=>{setSave(s=>({...s,shelf:s.shelf||(view==='shelf'||view==='collection'),mood:s.mood||mood!=='warm',seen:selected===undefined||s.seen.includes(selected)?s.seen:[...s.seen,selected]}));},[view,selected,mood]);
  useEffect(()=>{try{localStorage.setItem('room-collection-v1',JSON.stringify(save));}catch{}},[save]);
  const complete=(id:string,s=save)=>id==='shelf'?s.shelf:id==='discover'?s.seen.length>=3:s.mood;
  return {save,points:balance(save),complete,
