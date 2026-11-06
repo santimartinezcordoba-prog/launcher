@@ -31,7 +31,7 @@ El inventario ofrece Colocar o Mover objeto. La cámara pasa a una vista cenital
 ## Qué puedes probar
 
 - Pulsar el ordenador o cualquier parte del setup para abrir ajustes, tienda, misiones e inventario.
-- Entrar por la puerta en la sala de colección, elegir un género y seleccionar sus portadas frontales. Cada apartado reserva diez huecos fijos en dos filas de cinco, aunque tenga menos juegos; acercarte permite verlas con detalle. Los demás juegos están en la biblioteca filtrada.
+- Entrar por la puerta en la sala de colección, elegir un género y seleccionar sus portadas frontales. Cada apartado muestra sus dos juegos más jugados en la sala. Al abrirlo conserva diez posiciones: dos portadas centrales y los demás lomos a los lados, con huecos vacíos si tiene menos juegos. Los demás juegos están en la biblioteca filtrada.
 - Abrir Mis platinos desde el ordenador. Las fichas incluyen progreso y logros.
 - Volver con Escape: ficha → sala de colección → entrada. Ctrl+K abre el buscador.
 - Buscar entre 60 juegos de ejemplo y filtrar por tienda, género, instalación o favoritos.
@@ -307,3 +307,18 @@ Validación: compilación y pruebas de encuadre, zoom real, arrastre, restauraci
 La captura usa imágenes de reserva para verificar los títulos sin depender de los servidores externos de carátulas.
 
 ![Portadas y títulos en la vista cercana](docs/collection-readable-titles.png)
+
+
+## Dos portadas destacadas y cajas laterales (0.6.9)
+
+La sala completa muestra únicamente los dos juegos más jugados de cada apartado, con carcasas de mayor tamaño y títulos explícitos. En la sección reciente, el orden usa las horas de los últimos catorce días; en las demás, las horas acumuladas. Se retiran el zoom manual y el arrastre. La sala conserva su suelo, techo, paredes laterales y distribución de géneros.
+
+Pulsar una sección o una de sus portadas abre la estantería: dos cajas de frente en el centro y hasta ocho lomos a los lados. Se mantienen diez posiciones, dejando vacías las que no tienen juego. El primer clic en una caja despliega su portada en el centro con una animación de extracción. El segundo clic en la portada abre la ficha existente para jugar o descargar. Clicar el fondo exterior o pulsar Escape cierra esa portada y conserva el apartado anterior. Las animaciones respetan la preferencia de movimiento reducido. Las acciones de juego y descarga mantienen el comportamiento de demostración del launcher.
+
+Validación: compilación, secuencia completa con animación, selección de un lomo, segundo clic, cierre exterior y Escape, huecos vacíos, ventana compacta, filtros, favoritos, rankings y regreso al dormitorio. En la vista general a 1600 × 770 las portadas más pequeñas miden unos 75 × 106 píxeles, frente a 36 × 52 en 0.6.7. Las capturas usan carátulas de prueba:
+
+![Dos destacados por sección](docs/collection-two-featured.png)
+
+![Portadas centradas y lomos laterales](docs/collection-center-and-spines.png)
+
+![Portada extraída para abrir su ficha](docs/collection-selected-case.png)
