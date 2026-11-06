@@ -55,7 +55,7 @@ export function CollectionRoom({favorites,onBack,onLibrary,onGame,blocked,reduce
    const covers=Array.from({length:shelfCapacity},(_,slot)=>{const {x,y}=shelfSlot(slot),mesh=box(root,x,y,.26,caseWidth,caseHeight,.1,plastic);return {mesh,x,y,slot};});return {root,covers,placement};
   });
   container.dataset.rackLayout=JSON.stringify(racks.map((rack,i)=>({title:groupsRef.current[i].title,position:rack.root.position.toArray(),rotation:rack.root.rotation.y,height:rack.placement.height,width:shelfWidth,rows:shelfRows,columns:shelfColumns,capacity:shelfCapacity,slots:rack.covers.map(({x,y})=>({x,y})),bay:rack.placement.bay})));
-  const home=new THREE.Vector3(0,2.2*roomScale,cameraDistance),homeLook=new THREE.Vector3(0,2.8*roomScale,-3*roomScale),from=new THREE.Vector3(),fromLook=homeLook.clone(),look=homeLook.clone();
+  const home=new THREE.Vector3(0,2.2*roomScale,cameraDistance),homeLook=new THREE.Vector3(0,3.5*roomScale,-3*roomScale),from=new THREE.Vector3(),fromLook=homeLook.clone(),look=homeLook.clone();
   camera.position.copy(home);camera.lookAt(homeLook);camera.updateMatrixWorld();
   let current:number|null|undefined=undefined,start=0,frame=0,renderCount=0,disposed=false,overviewFov=60,fromViewHeight=1;
   let currentGroups=groupsRef.current;
@@ -65,10 +65,10 @@ export function CollectionRoom({favorites,onBack,onLibrary,onGame,blocked,reduce
   function resize(){
    const w=container.clientWidth,h=container.clientHeight;if(!w||!h)return;
    renderer.setSize(w,h);camera.aspect=w/h;
-   const horizontal=1-48/w,verticalTop=1-176/h,verticalBottom=1-170/h;
+   const horizontal=1-48/w,verticalTop=1-132/h,verticalBottom=1-144/h;
    let tangent=0;
    for(const corners of rackCorners)for(const corner of corners){const local=corner.clone().applyMatrix4(fitCamera.matrixWorldInverse),depth=-local.z;tangent=Math.max(tangent,Math.abs(local.x)/(depth*camera.aspect*horizontal),Math.abs(local.y)/(depth*(local.y>0?verticalTop:verticalBottom)));}
-   overviewFov=Math.max(55,THREE.MathUtils.radToDeg(2*Math.atan(tangent*1.035)));
+   overviewFov=Math.max(55,THREE.MathUtils.radToDeg(2*Math.atan(tangent*1.005)));
    container.dataset.roomView=JSON.stringify({camera:home.toArray(),target:homeLook.toArray(),ceilingHeight:wallTop,fieldOfView:overviewFov});
    if(current===undefined||focusRef.current===null){camera.fov=overviewFov;camera.updateProjectionMatrix();fromViewHeight=2*camera.position.distanceTo(look)*Math.tan(THREE.MathUtils.degToRad(camera.fov/2));}
    dirty=true;
@@ -118,12 +118,12 @@ export function CollectionRoom({favorites,onBack,onLibrary,onGame,blocked,reduce
  return <section className="collection-room" aria-label="Sala de colección" inert={blocked} aria-hidden={blocked}>
   <div ref={host} className="collection-world" data-testid="collection-room">
    {groups.map((group,i)=><article key={group.id} aria-label={`Estantería de ${group.title}`} hidden={focus!==null&&focus!==i}>
-    <button className="genre-plaque" data-genre-index={i} onClick={()=>setFocus(i)}>{group.title}<small>{group.games.length} juegos · Acercarse{group.collection==='most-played'?' · Horas de ejemplo':''}</small></button>
+    <button className="genre-plaque" data-genre-index={i} onClick={()=>setFocus(i)}>{group.title}<small>{group.games.length} juegos · Acercarse{group.collection==='recently-played'?' · Últimos 14 días · Ejemplo':group.collection==='most-played'?' · Horas totales · Ejemplo':''}</small></button>
     {group.games.slice(0,shelfCapacity).map((game,j)=><button key={game.id} className="collection-cover" data-collection-game={`${i}:${j}`} data-game-id={game.id} aria-label={`Ver ${game.title}`} onPointerMove={event=>{if(event.movementX||event.movementY)showPreview(game,event.currentTarget);}} onPointerLeave={clearPreview} onFocus={event=>showPreview(game,event.currentTarget)} onBlur={clearPreview} onClick={()=>{clearPreview();onGame(game);}}><GameArt game={game} preload={preloaded.has(game.id)}/><span className="collection-case-title">{game.title}</span></button>)}
    </article>)}
   </div>
   <header className="collection-toolbar"><button className="quiet-button" onClick={onBack}>← Volver a mi habitación</button><label>Estantería<select aria-label="Elegir estantería por género" value={focus??''} onChange={event=>setFocus(event.target.value===''?null:Number(event.target.value))}><option value="">Vista de la sala completa</option>{groups.map((group,i)=><option key={group.id} value={i}>{group.title}</option>)}</select></label><button className="quiet-button" onClick={()=>onLibrary()}>Biblioteca completa</button></header>
-  <footer className="collection-footer">{selected?<><strong>{selected.title}</strong><span>{Math.min(shelfCapacity,selected.games.length)} de {shelfCapacity} huecos ocupados · {selected.games.length} {selected.games.length===1?'juego':'juegos'}{selected.collection==='most-played'?' · Horas de ejemplo':''}</span><button className="primary-button" onClick={()=>library(focus!)}>Ver biblioteca de {selected.title} →</button><button className="quiet-button" onClick={()=>setFocus(null)}>Ver toda la sala</button></>:<p>Pasa el ratón por un juego para ampliar su portada. Pulsa un género para acercarte y abrir su biblioteca.</p>}</footer>
+  <footer className="collection-footer">{selected?<><strong>{selected.title}</strong><span>{Math.min(shelfCapacity,selected.games.length)} de {shelfCapacity} huecos ocupados · {selected.games.length} {selected.games.length===1?'juego':'juegos'}{selected.collection==='recently-played'?' · Últimos 14 días · Datos de ejemplo':selected.collection==='most-played'?' · Horas totales · Datos de ejemplo':''}</span><button className="primary-button" onClick={()=>library(focus!)}>Ver biblioteca de {selected.title} →</button><button className="quiet-button" onClick={()=>setFocus(null)}>Ver toda la sala</button></>:<p>Pasa el ratón por un juego para ampliar su portada. Pulsa un género para acercarte y abrir su biblioteca.</p>}</footer>
   {preview&&focus===null&&!blocked&&<aside className="collection-game-preview" aria-label="Portada ampliada" style={{left:preview.x,top:preview.y}}><div><GameArt key={preview.game.id} game={preview.game} preload/></div><strong>{preview.game.title}</strong></aside>}
   {selected&&!selected.games.length&&<div className="collection-empty"><p>Marca juegos con la estrella para verlos aquí.</p><button className="quiet-button" onClick={()=>onLibrary()}>Buscar juegos</button></div>}
   {error&&<div className="collection-error"><p>No se pudo abrir la sala 3D.</p><button className="primary-button" onClick={()=>onLibrary()}>Ver biblioteca completa</button></div>}

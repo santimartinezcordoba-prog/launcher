@@ -1,6 +1,6 @@
 export const stores = ['Steam', 'Epic Games', 'Ubisoft Connect', 'Xbox / Game Pass', 'EA', 'Battle.net', 'Riot Games', 'CD PROJEKT RED'] as const;
 export type Store = typeof stores[number];
-export type Game = { id: number; title: string; store: Store; genre: string; installed: boolean; hours: number; color: string; year: number; synopsis: string; requirements: string[]; familyOwner?: string };
+export type Game = { id: number; title: string; store: Store; genre: string; installed: boolean; hours: number; recentHours: number; color: string; year: number; synopsis: string; requirements: string[]; familyOwner?: string };
 const titles = [
   ['Hollow Knight','Aventura'], ['Elden Ring','RPG'], ['Stardew Valley','Simulación'], ['Red Dead Redemption 2','Aventura'],
   ['Baldur’s Gate 3','RPG'], ['Cyberpunk 2077','RPG'], ['Hades','Acción'], ['Celeste','Plataformas'],
@@ -36,7 +36,7 @@ function storeFor(i: number): Store {
   return 'Steam';
 }
 export const games: Game[] = titles.map(([title,genre],id)=>({
-  id, title, genre, store: storeFor(id), familyOwner: id===13 ? 'Alex (ejemplo)' : undefined, installed: id%4!==3, hours: Math.max(0, 172 - id*3),
+  id, title, genre, store: storeFor(id), familyOwner: id===13 ? 'Alex (ejemplo)' : undefined, installed: id%4!==3, hours: Math.max(0, 172 - id*3), recentHours: id%3===0 ? 0 : ((id*7)%29)+1,
   color: palette[id%palette.length], year: [2017,2022,2016,2018,2023,2020][id%6],
   synopsis: descriptions[id] ?? `Descubre ${title} en tu biblioteca. Esta ficha de ejemplo muestra cómo consultarás la información de tus juegos sin salir de la habitación.`,
   requirements: id===0 ? ['Windows 10 (64 bits)', 'Intel Core 2 Duo E5200', '4 GB de RAM', 'GeForce 9800 GTX (1 GB)', '9 GB disponibles'] : ['Windows 10 / 11 (64 bits)', 'Procesador de cuatro núcleos', '16 GB de RAM', 'Gráfica compatible con DirectX 12', '70 GB disponibles']

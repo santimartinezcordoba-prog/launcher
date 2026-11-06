@@ -13,9 +13,9 @@ test('favoritos se actualizan al quitar estrellas y su biblioteca conserva el fi
  await page.getByRole('button',{name:'Ver biblioteca de Favoritos →',exact:true}).click();await expect(page.getByRole('navigation',{name:'Filtrar biblioteca'}).getByRole('button',{name:'Favoritos',exact:true})).toHaveAttribute('aria-pressed','true');await expect(page.locator('.card-details>button')).toHaveText(['Hades','Outer Wilds']);
 });
 test('más jugados muestra diez juegos en orden de horas y abre la biblioteca ordenada',async({page})=>{
- await enter(page);await page.getByLabel('Elegir estantería por género').selectOption({label:'Más jugados'});await expect(page.getByTestId('collection-room')).toHaveAttribute('data-genre','Más jugados');
- const shelf=page.getByRole('article',{name:'Estantería de Más jugados',exact:true});await expect(shelf.locator('.collection-cover:visible')).toHaveCount(10);expect(await shelf.locator('.collection-cover:visible').evaluateAll(nodes=>nodes.map(node=>Number((node as HTMLElement).dataset.gameId)))).toEqual([0,1,2,3,4,5,6,7,8,9]);await page.screenshot({path:'test-results/collection-most-played.png'});
- await page.getByRole('button',{name:'Ver biblioteca de Más jugados →',exact:true}).click();await expect(page.getByLabel('Ordenar juegos')).toHaveValue('Más jugados');await expect(page.getByLabel('Género',{exact:true})).toHaveValue('Todos los géneros');await expect(page.locator('.game-card')).toHaveCount(60);await expect(page.locator('.card-details>button').first()).toHaveText('Hollow Knight');
+ await enter(page);await page.getByLabel('Elegir estantería por género').selectOption({label:'Más jugados de siempre'});await expect(page.getByTestId('collection-room')).toHaveAttribute('data-genre','Más jugados de siempre');
+ const shelf=page.getByRole('article',{name:'Estantería de Más jugados de siempre',exact:true});await expect(shelf.locator('.collection-cover:visible')).toHaveCount(10);expect(await shelf.locator('.collection-cover:visible').evaluateAll(nodes=>nodes.map(node=>Number((node as HTMLElement).dataset.gameId)))).toEqual([0,1,2,3,4,5,6,7,8,9]);await page.screenshot({path:'test-results/collection-most-played.png'});
+ await page.getByRole('button',{name:'Ver biblioteca de Más jugados de siempre →',exact:true}).click();await expect(page.getByLabel('Ordenar juegos')).toHaveValue('Más jugados');await expect(page.getByLabel('Género',{exact:true})).toHaveValue('Todos los géneros');await expect(page.locator('.game-card')).toHaveCount(60);await expect(page.locator('.card-details>button').first()).toHaveText('Hollow Knight');
 });
 
 test('un apartado con un juego conserva los diez huecos y el mismo tamaño que uno lleno',async({page})=>{
@@ -23,6 +23,12 @@ test('un apartado con un juego conserva los diez huecos y el mismo tamaño que u
  await page.getByLabel('Elegir estantería por género').selectOption({label:'Carreras'});await expect(room).toHaveAttribute('data-genre','Carreras');await expect(room).toHaveAttribute('data-motion','idle');
  await expect(page.getByText('1 de 10 huecos ocupados · 1 juego',{exact:true})).toBeVisible();await expect(page.locator('.collection-cover:visible')).toHaveCount(1);
  const sparseCover=await page.locator('.collection-cover:visible').first().boundingBox();await page.screenshot({path:'test-results/collection-nine-free-slots.png'});
- await page.getByLabel('Elegir estantería por género').selectOption({label:'Más jugados'});await expect(room).toHaveAttribute('data-genre','Más jugados');await expect(room).toHaveAttribute('data-motion','idle');
+ await page.getByLabel('Elegir estantería por género').selectOption({label:'Más jugados de siempre'});await expect(room).toHaveAttribute('data-genre','Más jugados de siempre');await expect(room).toHaveAttribute('data-motion','idle');
  await expect(page.locator('.collection-cover:visible')).toHaveCount(10);const fullCover=await page.locator('.collection-cover:visible').first().boundingBox();expect(Math.abs(sparseCover!.width-fullCover!.width)).toBeLessThan(1);expect(Math.abs(sparseCover!.height-fullCover!.height)).toBeLessThan(1);await expect(room).toHaveAttribute('data-rack-layout',fixedLayout!);
+});
+
+test('recientemente usa horas de los últimos catorce días y conserva su orden en biblioteca',async({page})=>{
+ await enter(page);await page.getByLabel('Elegir estantería por género').selectOption({label:'Más jugados recientemente'});const room=page.getByTestId('collection-room');await expect(room).toHaveAttribute('data-genre','Más jugados recientemente');
+ const shelf=page.getByRole('article',{name:'Estantería de Más jugados recientemente',exact:true});await expect(shelf.locator('.collection-cover:visible')).toHaveCount(10);expect(await shelf.locator('.collection-cover').evaluateAll(nodes=>nodes.map(n=>Number((n as HTMLElement).dataset.gameId)))).toEqual([4, 8, 37, 41, 16, 20, 49, 53, 28, 32]);
+ await expect(page.getByText(/Últimos 14 días · Datos de ejemplo/)).toBeVisible();await page.getByRole('button',{name:'Ver biblioteca de Más jugados recientemente →',exact:true}).click();await expect(page.getByLabel('Ordenar juegos')).toHaveValue('Más jugados recientemente');await expect(page.locator('.card-details>button').first()).toHaveText('Baldur’s Gate 3');
 });

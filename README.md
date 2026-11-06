@@ -285,3 +285,14 @@ Validación: compilación de producción y nueve pruebas de navegador. Se compru
 ![Diez portadas en dos filas de cinco](docs/collection-ten-games.png)
 
 ![Un juego y nueve huecos libres](docs/collection-nine-free-slots.png)
+
+
+## Encuadre ampliado y dos rankings (0.6.7)
+
+La sala aprovecha más pantalla: se centra la cámara en la altura de los muebles y se reducen los márgenes libres, manteniendo suelo, techo y laterales. A 1600 × 770, la portada más pequeña pasa de unos 32 × 46 a 36 × 52 píxeles. Los quince apartados conservan diez huecos fijos. Supervivencia ocupa el espacio superior izquierdo que estaba vacío. Su antiguo sitio en el fondo muestra Más jugados recientemente. Más jugados de siempre permanece debajo.
+
+El ranking de siempre ordena por horas acumuladas. Recientemente ordena por horas de los últimos catorce días, excluye juegos sin actividad en ese periodo y abre la biblioteca con ese orden. Los datos de ambas listas son de demostración; no hay sincronización de actividad real.
+
+Validación: compilación de producción, pruebas de los rankings y sus accesos a biblioteca, estabilidad de huecos, favoritos y encuadre a tres tamaños de ventana. Captura con imágenes de prueba:
+
+![Sala ampliada con Supervivencia en el lateral y ambos rankings](docs/collection-two-rankings.png)

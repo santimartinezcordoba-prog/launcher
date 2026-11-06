@@ -16,12 +16,13 @@ export function shelfSlot(slot:number){
 export const genreGroups=[...new Set(games.map(g=>g.genre))]
  .sort((a,b)=>a.localeCompare(b,'es'))
  .map(genre=>({id:genre,title:genre,genre,games:games.filter(g=>g.genre===genre)}));
-export type CollectionFilter='favorites'|'most-played';
+export type CollectionFilter='favorites'|'most-played'|'recently-played';
 export type ShelfGroup={id:string;title:string;genre?:string;collection?:CollectionFilter;games:Game[]};
 export function collectionShelves(favorites:number[]):ShelfGroup[]{
  return [...genreGroups,
   {id:'favorites',title:'Favoritos',collection:'favorites',games:games.filter(g=>favorites.includes(g.id))},
-  {id:'most-played',title:'Más jugados',collection:'most-played',games:[...games].sort((a,b)=>b.hours-a.hours||a.title.localeCompare(b.title,'es'))}
+  {id:'most-played',title:'Más jugados de siempre',collection:'most-played',games:[...games].sort((a,b)=>b.hours-a.hours||a.title.localeCompare(b.title,'es'))},
+  {id:'recently-played',title:'Más jugados recientemente',collection:'recently-played',games:games.filter(g=>g.recentHours>0).sort((a,b)=>b.recentHours-a.recentHours||b.hours-a.hours)}
  ];
 }
 export const baySpacing=5.24;
@@ -33,7 +34,7 @@ export function bayPosition(bay:number):[number,number,number]{
  return [(bay-2)*baySpacing,-5.5*roomScale,0];
 }
 // The ten-slot footprint and wall positions are independent of the owned games.
-const wallGroups=[['Acción','RPG'],['Estrategia','Creatividad','Simulación'],['favorites','most-played','Supervivencia'],['Aventura','Carreras','Puzles'],['Cooperativo','Plataformas','Exploración']];
+const wallGroups=[['Acción','RPG','Supervivencia'],['Estrategia','Creatividad','Simulación'],['favorites','most-played','recently-played'],['Aventura','Carreras','Puzles'],['Cooperativo','Plataformas','Exploración']];
 export function arrangeShelves(groups:ShelfGroup[]):ShelfPlacement[]{
  return groups.map(group=>{
   const bay=wallGroups.findIndex(ids=>ids.includes(group.id)),tier=wallGroups[bay].indexOf(group.id);
