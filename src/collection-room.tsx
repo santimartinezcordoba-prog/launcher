@@ -16,10 +16,12 @@ export function CollectionRoom({favorites,onBack,onLibrary,onGame,blocked,reduce
  const arrangement=useMemo(()=>arrangeShelves(groups),[groups]);
  const arrangementKey=JSON.stringify(arrangement);
  const host=useRef<HTMLDivElement>(null),[focus,setFocus]=useState<number|null>(null),[error,setError]=useState(false);const focusRef=useRef(focus);focusRef.current=focus;const [preview,setPreview]=useState<{game:Game;x:number;y:number}|null>(null);
+ const navigation=useRef<{zoom:(factor:number)=>void;reset:()=>void}|null>(null);
+ const [zoomLevel,setZoomLevel]=useState(1);
  const previewTarget=useRef<HTMLButtonElement|null>(null);
  const clearPreview=()=>{previewTarget.current=null;setPreview(null);};
  useEffect(clearPreview,[focus,blocked]);
- const showPreview=(game:Game,element:HTMLButtonElement)=>{if(focus!==null||previewTarget.current===element)return;previewTarget.current=element;const b=element.getBoundingClientRect(),width=246,height=405;setPreview({game,x:b.right+width+16<innerWidth?b.right+12:Math.max(12,b.left-width-12),y:Math.max(80,Math.min(innerHeight-height-80,b.top-70))});};
+ const showPreview=(game:Game,element:HTMLButtonElement)=>{if(previewTarget.current===element)return;previewTarget.current=element;const b=element.getBoundingClientRect(),width=286,height=465;setPreview({game,x:b.right+width+16<innerWidth?b.right+12:Math.max(12,b.left-width-12),y:Math.max(80,Math.min(innerHeight-height-80,b.top-70))});};
  const [preloaded,setPreloaded]=useState<Set<number>>(()=>new Set()),preloadedRef=useRef(new Set<number>());
  useEffect(()=>{
   const container=host.current!;let renderer:THREE.WebGLRenderer;
@@ -58,6 +60,14 @@ export function CollectionRoom({favorites,onBack,onLibrary,onGame,blocked,reduce
   const home=new THREE.Vector3(0,2.2*roomScale,cameraDistance),homeLook=new THREE.Vector3(0,3.5*roomScale,-3*roomScale),from=new THREE.Vector3(),fromLook=homeLook.clone(),look=homeLook.clone();
   camera.position.copy(home);camera.lookAt(homeLook);camera.updateMatrixWorld();
   let current:number|null|undefined=undefined,start=0,frame=0,renderCount=0,disposed=false,overviewFov=60,fromViewHeight=1;
+  let zoom=1,panX=0,panY=0,drag:{x:number;y:number}|null=null;
+  const updateZoom=(factor:number)=>{zoom=THREE.MathUtils.clamp(zoom*factor,1,4);if(zoom===1){panX=0;panY=0;}setZoomLevel(zoom);clearPreview();dirty=true;};
+  navigation.current={zoom:updateZoom,reset:()=>{zoom=1;panX=panY=0;setZoomLevel(1);clearPreview();dirty=true;}};
+  const wheel=(event:WheelEvent)=>{event.preventDefault();updateZoom(Math.exp(-event.deltaY*.0015));};
+  const down=(event:PointerEvent)=>{if(event.button!==0||(event.target as HTMLElement).closest('button'))return;drag={x:event.clientX,y:event.clientY};container.setPointerCapture(event.pointerId);container.classList.add('is-dragging');clearPreview();};
+  const move=(event:PointerEvent)=>{if(!drag)return;panX-=event.clientX-drag.x;panY-=event.clientY-drag.y;panX=THREE.MathUtils.clamp(panX,-container.clientWidth,container.clientWidth);panY=THREE.MathUtils.clamp(panY,-container.clientHeight,container.clientHeight);drag={x:event.clientX,y:event.clientY};dirty=true;};
+  const up=()=>{drag=null;container.classList.remove('is-dragging');};
+  container.addEventListener('wheel',wheel,{passive:false});container.addEventListener('pointerdown',down);container.addEventListener('pointermove',move);container.addEventListener('pointerup',up);container.addEventListener('pointercancel',up);
   let currentGroups=groupsRef.current;
   scene.updateMatrixWorld(true);
   const rackCorners=racks.map(rack=>{const box=new THREE.Box3().setFromObject(rack.root);box.max.y+=.22;return [box.min.x,box.max.x].flatMap(x=>[box.min.y,box.max.y].flatMap(y=>[box.min.z,box.max.z].map(z=>new THREE.Vector3(x,y,z))));});
@@ -77,7 +87,7 @@ export function CollectionRoom({favorites,onBack,onLibrary,onGame,blocked,reduce
   const project=(v:THREE.Vector3)=>v.clone().project(camera);
   function tick(time:number){if(disposed)return;const selected=focusRef.current;
    if(currentGroups!==groupsRef.current){currentGroups=groupsRef.current;dirty=true;renderer.shadowMap.needsUpdate=true;}
-   if(current!==selected){current=selected;renderer.shadowMap.needsUpdate=true;from.copy(camera.position);fromLook.copy(look);fromViewHeight=2*camera.position.distanceTo(look)*Math.tan(THREE.MathUtils.degToRad(camera.fov/2));start=time;dirty=true;}
+   if(current!==selected){zoom=1;panX=panY=0;setZoomLevel(1);current=selected;renderer.shadowMap.needsUpdate=true;from.copy(camera.position);fromLook.copy(look);fromViewHeight=2*camera.position.distanceTo(look)*Math.tan(THREE.MathUtils.degToRad(camera.fov/2));start=time;dirty=true;}
    let target=home,targetLook=homeLook;
    if(selected!==null){
     const rack=racks[selected],distance=Math.max(4.2,shelfWidth/(2*Math.tan(THREE.MathUtils.degToRad(55/2))*camera.aspect*.88));
@@ -85,7 +95,7 @@ export function CollectionRoom({favorites,onBack,onLibrary,onGame,blocked,reduce
     target=rack.root.localToWorld(new THREE.Vector3(0,rack.placement.height/2+.15,distance));
    }
    const t=reduced||matchMedia('(prefers-reduced-motion: reduce)').matches?1:Math.min(1,(time-start)/650),factor=1-(1-t)**3;
-   if(dirty||t<1){camera.position.lerpVectors(from,target,factor);look.lerpVectors(fromLook,targetLook,factor);camera.lookAt(look);const targetFov=selected===null?overviewFov:55,targetViewHeight=2*target.distanceTo(targetLook)*Math.tan(THREE.MathUtils.degToRad(targetFov/2)),viewHeight=THREE.MathUtils.lerp(fromViewHeight,targetViewHeight,factor);camera.fov=THREE.MathUtils.radToDeg(2*Math.atan(viewHeight/(2*Math.max(.1,camera.position.distanceTo(look)))));camera.updateProjectionMatrix();camera.updateMatrixWorld();scene.updateMatrixWorld(true);
+   if(dirty||t<1){camera.position.lerpVectors(from,target,factor);look.lerpVectors(fromLook,targetLook,factor);camera.lookAt(look);const targetFov=selected===null?overviewFov:55,targetViewHeight=2*target.distanceTo(targetLook)*Math.tan(THREE.MathUtils.degToRad(targetFov/2)),viewHeight=THREE.MathUtils.lerp(fromViewHeight,targetViewHeight,factor);camera.fov=THREE.MathUtils.radToDeg(2*Math.atan(viewHeight/(2*Math.max(.1,camera.position.distanceTo(look)))));camera.zoom=zoom;camera.setViewOffset(container.clientWidth,container.clientHeight,panX,panY,container.clientWidth,container.clientHeight);camera.updateProjectionMatrix();camera.updateMatrixWorld();scene.updateMatrixWorld(true);container.dataset.zoom=String(zoom);container.dataset.pan=`${panX},${panY}`;container.dataset.legible=String(selected!==null||zoom>=2);
     const w=container.clientWidth,h=container.clientHeight;let newPreloads=false;
     racks.forEach((rack,i)=>{
      const label=container.querySelector<HTMLElement>(`[data-genre-index="${i}"]`),p=project(rack.root.localToWorld(new THREE.Vector3(0,rack.placement.height+.12,.25)));
@@ -111,7 +121,7 @@ export function CollectionRoom({favorites,onBack,onLibrary,onGame,blocked,reduce
    }frame=requestAnimationFrame(tick);
   }
   frame=requestAnimationFrame(tick);
-  return ()=>{disposed=true;cancelAnimationFrame(frame);observer.disconnect();const geometries=new Set<THREE.BufferGeometry>();scene.traverse(o=>{if(o instanceof THREE.Mesh)geometries.add(o.geometry);});geometries.forEach(g=>g.dispose());[wood,edge,wall,ceiling,plastic,floorMaterial].forEach(m=>m.dispose());timber.dispose();floorTexture.dispose();renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();};
+  return ()=>{navigation.current=null;container.removeEventListener('wheel',wheel);container.removeEventListener('pointerdown',down);container.removeEventListener('pointermove',move);container.removeEventListener('pointerup',up);container.removeEventListener('pointercancel',up);disposed=true;cancelAnimationFrame(frame);observer.disconnect();const geometries=new Set<THREE.BufferGeometry>();scene.traverse(o=>{if(o instanceof THREE.Mesh)geometries.add(o.geometry);});geometries.forEach(g=>g.dispose());[wood,edge,wall,ceiling,plastic,floorMaterial].forEach(m=>m.dispose());timber.dispose();floorTexture.dispose();renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();};
  },[reduced,arrangementKey]);
  const selected=focus===null?undefined:groups[focus];
  const library=(index:number)=>onLibrary(groups[index].genre,groups[index].collection);
@@ -123,8 +133,9 @@ export function CollectionRoom({favorites,onBack,onLibrary,onGame,blocked,reduce
    </article>)}
   </div>
   <header className="collection-toolbar"><button className="quiet-button" onClick={onBack}>← Volver a mi habitación</button><label>Estantería<select aria-label="Elegir estantería por género" value={focus??''} onChange={event=>setFocus(event.target.value===''?null:Number(event.target.value))}><option value="">Vista de la sala completa</option>{groups.map((group,i)=><option key={group.id} value={i}>{group.title}</option>)}</select></label><button className="quiet-button" onClick={()=>onLibrary()}>Biblioteca completa</button></header>
-  <footer className="collection-footer">{selected?<><strong>{selected.title}</strong><span>{Math.min(shelfCapacity,selected.games.length)} de {shelfCapacity} huecos ocupados · {selected.games.length} {selected.games.length===1?'juego':'juegos'}{selected.collection==='recently-played'?' · Últimos 14 días · Datos de ejemplo':selected.collection==='most-played'?' · Horas totales · Datos de ejemplo':''}</span><button className="primary-button" onClick={()=>library(focus!)}>Ver biblioteca de {selected.title} →</button><button className="quiet-button" onClick={()=>setFocus(null)}>Ver toda la sala</button></>:<p>Pasa el ratón por un juego para ampliar su portada. Pulsa un género para acercarte y abrir su biblioteca.</p>}</footer>
-  {preview&&focus===null&&!blocked&&<aside className="collection-game-preview" aria-label="Portada ampliada" style={{left:preview.x,top:preview.y}}><div><GameArt key={preview.game.id} game={preview.game} preload/></div><strong>{preview.game.title}</strong></aside>}
+  <footer className="collection-footer">{selected?<><strong>{selected.title}</strong><span>{Math.min(shelfCapacity,selected.games.length)} de {shelfCapacity} huecos ocupados · {selected.games.length} {selected.games.length===1?'juego':'juegos'}{selected.collection==='recently-played'?' · Últimos 14 días · Datos de ejemplo':selected.collection==='most-played'?' · Horas totales · Datos de ejemplo':''}</span><button className="primary-button" onClick={()=>library(focus!)}>Ver biblioteca de {selected.title} →</button><button className="quiet-button" onClick={()=>setFocus(null)}>Ver toda la sala</button></>:<p>Usa la rueda o + para acercarte y arrastra el fondo para moverte. Pulsa un género para ver sus diez juegos con título.</p>}</footer>
+  <nav className="collection-zoom" aria-label="Ampliar sala"><button aria-label="Alejar sala" disabled={zoomLevel<=1} onClick={()=>navigation.current?.zoom(1/1.3)}>−</button><output>{Math.round(zoomLevel*100)}%</output><button aria-label="Acercar sala" disabled={zoomLevel>=4} onClick={()=>navigation.current?.zoom(1.3)}>+</button><button onClick={()=>navigation.current?.reset()}>Restablecer vista</button></nav>
+  {preview&&!blocked&&<aside className="collection-game-preview" aria-label="Portada ampliada" style={{left:preview.x,top:preview.y}}><div><GameArt key={preview.game.id} game={preview.game} preload/></div><strong>{preview.game.title}</strong></aside>}
   {selected&&!selected.games.length&&<div className="collection-empty"><p>Marca juegos con la estrella para verlos aquí.</p><button className="quiet-button" onClick={()=>onLibrary()}>Buscar juegos</button></div>}
   {error&&<div className="collection-error"><p>No se pudo abrir la sala 3D.</p><button className="primary-button" onClick={()=>onLibrary()}>Ver biblioteca completa</button></div>}
  </section>;

@@ -296,3 +296,14 @@ El ranking de siempre ordena por horas acumuladas. Recientemente ordena por hora
 Validación: compilación de producción, pruebas de los rankings y sus accesos a biblioteca, estabilidad de huecos, favoritos y encuadre a tres tamaños de ventana. Captura con imágenes de prueba:
 
 ![Sala ampliada con Supervivencia en el lateral y ambos rankings](docs/collection-two-rankings.png)
+
+
+## Lectura de carcasas (0.6.8)
+
+La sala conserva su encuadre general y añade zoom de 100 % a 400 % mediante rueda o botones. Arrastrar el fondo desplaza la vista; Restablecer vista recupera el encuadre inicial. Seleccionar un género restablece el zoom y acerca sus diez huecos. Los títulos se muestran sobre las cajas al acercarse a una estantería o ampliar la sala. La previsualización al señalar funciona también en las vistas de género: portada de 270 × 405 píxeles y título completo de 17 píxeles.
+
+Validación: compilación y pruebas de encuadre, zoom real, arrastre, restauración, títulos en la vista cercana y apertura de fichas. Señalar una portada mantiene el escenario sin redibujos adicionales.
+
+La captura usa imágenes de reserva para verificar los títulos sin depender de los servidores externos de carátulas.
+
+![Portadas y títulos en la vista cercana](docs/collection-readable-titles.png)
