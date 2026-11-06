@@ -14,13 +14,14 @@ export function collectionShelves(favorites:number[]):ShelfGroup[]{
  ];
 }
 export const baySpacing=3.36;
-export const cameraDistance=35;
+export const cameraDistance=5;
 export type ShelfPlacement={bay:number;position:[number,number,number];rotation:number;height:number;rows:number};
 export function bayPosition(bay:number):[number,number,number]{
- const angle=(bay-2)*baySpacing/cameraDistance;
- return [Math.sin(angle)*cameraDistance,Math.cos(angle)*-cameraDistance+cameraDistance,-angle];
+ if(bay===0)return [-6.3,-4,Math.PI/3];
+ if(bay===4)return [6.3,-4,-Math.PI/3];
+ return [(bay-2)*baySpacing,-5.5,0];
 }
-// Stack modular shelves along five shallow wall facets, all turned towards the entrance.
+// Shelves follow the back wall and the two diagonal side walls of the room.
 export function arrangeShelves(groups:ShelfGroup[]):ShelfPlacement[]{
  const heights=Array(5).fill(0),placed=new Map<number,ShelfPlacement>();
  const put=(index:number,bay:number)=>{
@@ -28,7 +29,7 @@ export function arrangeShelves(groups:ShelfGroup[]):ShelfPlacement[]{
   const [x,z,rotation]=bayPosition(bay),y=heights[bay];
   placed.set(index,{bay,position:[x,y,z],rotation,height,rows});heights[bay]+=height+.24;
  };
- put(12,2);put(13,2);put(0,1);put(3,4);
+ put(12,2);put(13,2);put(0,0);put(3,4);
  const remaining=groups.map((_,index)=>index).filter(index=>!placed.has(index)).sort((a,b)=>Number(groups[b].games.length>4)-Number(groups[a].games.length>4)||a-b);
  const priority=[0,4,3,1,2];
  for(const index of remaining){const bay=[...priority].sort((a,b)=>heights[a]-heights[b])[0];put(index,bay);}

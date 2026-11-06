@@ -27,16 +27,21 @@ export function CollectionRoom({favorites,onBack,onLibrary,onGame,blocked,reduce
   renderer.setPixelRatio(Math.min(devicePixelRatio,1.25));renderer.setClearColor('#171e1c');renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;renderer.shadowMap.needsUpdate=true;container.prepend(renderer.domElement);
   let dirty=true;const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(55,1,.1,70);scene.add(new THREE.HemisphereLight('#eee3cd','#647568',2),new THREE.AmbientLight('#eee7db',.8));const sun=new THREE.DirectionalLight('#ffe0b1',3);sun.position.set(-3,3,4);sun.castShadow=true;sun.shadow.bias=-.001;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-13,right:13,top:13,bottom:-13,far:45});scene.add(sun);
   const timber=new THREE.TextureLoader().load('./textures/wood.jpg',()=>{dirty=true;renderer.shadowMap.needsUpdate=true;});timber.colorSpace=THREE.SRGBColorSpace;timber.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
-  const wood=new THREE.MeshStandardMaterial({color:'#bea78f',roughness:.75,map:timber}),edge=new THREE.MeshStandardMaterial({color:'#cdb291',roughness:.6,map:timber}),wall=new THREE.MeshStandardMaterial({color:'#35493f',roughness:.95}),plastic=new THREE.MeshStandardMaterial({color:'#152326',roughness:.5});
+  const wood=new THREE.MeshStandardMaterial({color:'#bea78f',roughness:.75,map:timber}),edge=new THREE.MeshStandardMaterial({color:'#cdb291',roughness:.6,map:timber}),wall=new THREE.MeshStandardMaterial({color:'#35493f',roughness:.95}),ceiling=new THREE.MeshStandardMaterial({color:'#747767',roughness:.95}),plastic=new THREE.MeshStandardMaterial({color:'#152326',roughness:.5});
   function box(parent:THREE.Object3D,x:number,y:number,z:number,w:number,h:number,d:number,material:THREE.Material){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
   const placements=arrangement,wallTop=Math.max(...placements.map(p=>p.position[1]+p.height))+.6;
   const floorTexture=timber.clone();floorTexture.wrapS=floorTexture.wrapT=THREE.RepeatWrapping;floorTexture.repeat.set(3,10);
   const floorMaterial=new THREE.MeshStandardMaterial({color:'#b6a188',roughness:.9,map:floorTexture});
-  box(scene,0,-.1,19.5,18.4,.2,41,floorMaterial);
-  box(scene,-9.2,wallTop/2,20,.15,wallTop,40,wall);box(scene,9.2,wallTop/2,20,.15,wallTop,40,wall);box(scene,0,wallTop+.05,19.5,18.4,.1,41,wall);
+  const roomWidth=15.2,back=-6,front=12,depth=front-back,center=(front+back)/2;
+  box(scene,0,-.1,center,roomWidth,.2,depth,floorMaterial);
+  box(scene,-roomWidth/2,wallTop/2,4.7,.15,wallTop,14.6,wall);box(scene,roomWidth/2,wallTop/2,4.7,.15,wallTop,14.6,wall);
+  box(scene,0,wallTop+.05,center,roomWidth,.1,depth,ceiling);
+  // Short joins close the corners between the rear wall and the diagonal sides.
+  for(const sign of [-1,1])box(scene,sign*5.37,wallTop/2,-5.66,.7,wallTop,.2,wall);
   for(let bay=0;bay<5;bay++){
    const [x,z,rotation]=bayPosition(bay),facet=new THREE.Group();facet.position.set(x,0,z);facet.rotation.y=rotation;scene.add(facet);
    box(facet,0,wallTop/2,-.23,baySpacing+.06,wallTop,.15,wall);
+   for(const y of [.13,wallTop-.12])box(facet,0,y,-.07,baySpacing+.06,.14,.18,edge);
    for(const x of [-shelfWidth/2-.06,shelfWidth/2+.06])box(facet,x,wallTop/2,.12,.10,wallTop,.48,edge);
   }
   const racks=groupsRef.current.map((_,i)=>{
@@ -48,10 +53,9 @@ export function CollectionRoom({favorites,onBack,onLibrary,onGame,blocked,reduce
    const covers=Array.from({length:shelfCapacity},(_,j)=>{const x=(j%4-1.5)*.78,y=placement.rows===1||j>=4?.725:2,mesh=box(root,x,y,.26,.78,1.17,.1,plastic);return {mesh,x,y,slot:j};});return {root,covers,placement};
   });
   container.dataset.rackLayout=JSON.stringify(racks.map((rack,i)=>({title:groupsRef.current[i].title,position:rack.root.position.toArray(),rotation:rack.root.rotation.y,height:rack.placement.height,bay:rack.placement.bay})));
-  const top=Math.max(...placements.map(p=>p.position[1]+p.height))+.22;
-  const home=new THREE.Vector3(0,top/2,cameraDistance),homeLook=new THREE.Vector3(0,top/2,0),from=new THREE.Vector3(),fromLook=homeLook.clone(),look=homeLook.clone();
+  const home=new THREE.Vector3(0,2.2,cameraDistance),homeLook=new THREE.Vector3(0,2.8,-3),from=new THREE.Vector3(),fromLook=homeLook.clone(),look=homeLook.clone();
   camera.position.copy(home);camera.lookAt(homeLook);camera.updateMatrixWorld();
-  let current:number|null|undefined=undefined,start=0,frame=0,renderCount=0,disposed=false,overviewFov=15,fromViewHeight=1;
+  let current:number|null|undefined=undefined,start=0,frame=0,renderCount=0,disposed=false,overviewFov=60,fromViewHeight=1;
   let currentGroups=groupsRef.current;
   scene.updateMatrixWorld(true);
   const rackCorners=racks.map(rack=>{const box=new THREE.Box3().setFromObject(rack.root);box.max.y+=.22;return [box.min.x,box.max.x].flatMap(x=>[box.min.y,box.max.y].flatMap(y=>[box.min.z,box.max.z].map(z=>new THREE.Vector3(x,y,z))));});
@@ -62,7 +66,8 @@ export function CollectionRoom({favorites,onBack,onLibrary,onGame,blocked,reduce
    const horizontal=1-48/w,verticalTop=1-176/h,verticalBottom=1-170/h;
    let tangent=0;
    for(const corners of rackCorners)for(const corner of corners){const local=corner.clone().applyMatrix4(fitCamera.matrixWorldInverse),depth=-local.z;tangent=Math.max(tangent,Math.abs(local.x)/(depth*camera.aspect*horizontal),Math.abs(local.y)/(depth*(local.y>0?verticalTop:verticalBottom)));}
-   overviewFov=THREE.MathUtils.radToDeg(2*Math.atan(tangent*1.005));
+   overviewFov=Math.max(55,THREE.MathUtils.radToDeg(2*Math.atan(tangent*1.035)));
+   container.dataset.roomView=JSON.stringify({camera:home.toArray(),target:homeLook.toArray(),ceilingHeight:wallTop,fieldOfView:overviewFov});
    if(current===undefined||focusRef.current===null){camera.fov=overviewFov;camera.updateProjectionMatrix();fromViewHeight=2*camera.position.distanceTo(look)*Math.tan(THREE.MathUtils.degToRad(camera.fov/2));}
    dirty=true;
   }
@@ -87,7 +92,7 @@ export function CollectionRoom({favorites,onBack,onLibrary,onGame,blocked,reduce
      rack.covers.forEach(({mesh,x,y,slot})=>{
       const game=groupsRef.current[i].games[slot];if(!game){mesh.visible=false;return;}
       const points=[[-.38,.57],[.38,.57],[.38,-.57],[-.38,-.57]].map(([dx,dy])=>project(rack.root.localToWorld(new THREE.Vector3(x+dx,y+dy,.322))));
-      // The shallow, front-facing layout keeps every cover legible in the room overview.
+      // Keep posters loaded in the doorway view; hover and shelf focus provide the detailed view.
       const visible=points.every(p=>p.z>0&&p.z<1)&&points.some(p=>Math.abs(p.x)<1&&Math.abs(p.y)<1)&&(selected===null||selected===i);
       if(visible&&points.some(p=>Math.abs(p.x)<1&&Math.abs(p.y)<1)&&!preloadedRef.current.has(game.id)){preloadedRef.current.add(game.id);newPreloads=true;}
       mesh.visible=visible;const button=container.querySelector<HTMLElement>(`[data-collection-game="${i}:${slot}"]`);if(button){button.style.visibility=visible?'visible':'hidden';button.style.transform=visible?quad(points,w,h):'';}
@@ -100,7 +105,7 @@ export function CollectionRoom({favorites,onBack,onLibrary,onGame,blocked,reduce
    }frame=requestAnimationFrame(tick);
   }
   frame=requestAnimationFrame(tick);
-  return ()=>{disposed=true;cancelAnimationFrame(frame);observer.disconnect();const geometries=new Set<THREE.BufferGeometry>();scene.traverse(o=>{if(o instanceof THREE.Mesh)geometries.add(o.geometry);});geometries.forEach(g=>g.dispose());[wood,edge,wall,plastic,floorMaterial].forEach(m=>m.dispose());timber.dispose();floorTexture.dispose();renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();};
+  return ()=>{disposed=true;cancelAnimationFrame(frame);observer.disconnect();const geometries=new Set<THREE.BufferGeometry>();scene.traverse(o=>{if(o instanceof THREE.Mesh)geometries.add(o.geometry);});geometries.forEach(g=>g.dispose());[wood,edge,wall,ceiling,plastic,floorMaterial].forEach(m=>m.dispose());timber.dispose();floorTexture.dispose();renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();};
  },[reduced,arrangementKey]);
  const selected=focus===null?undefined:groups[focus];
  const library=(index:number)=>onLibrary(groups[index].genre,groups[index].collection);
