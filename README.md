@@ -31,7 +31,7 @@ El inventario ofrece Colocar o Mover objeto. La cámara pasa a una vista cenital
 ## Qué puedes probar
 
 - Pulsar el ordenador o cualquier parte del setup para abrir ajustes, tienda, misiones e inventario.
-- Entrar por la puerta en la sala de colección, elegir un género y seleccionar sus portadas frontales. Cada mueble admite hasta ocho portadas en dos filas de cuatro; acercarte permite verlas con detalle. Los demás juegos están en la biblioteca filtrada.
+- Entrar por la puerta en la sala de colección, elegir un género y seleccionar sus portadas frontales. Cada apartado reserva diez huecos fijos en dos filas de cinco, aunque tenga menos juegos; acercarte permite verlas con detalle. Los demás juegos están en la biblioteca filtrada.
 - Abrir Mis platinos desde el ordenador. Las fichas incluyen progreso y logros.
 - Volver con Escape: ficha → sala de colección → entrada. Ctrl+K abre el buscador.
 - Buscar entre 60 juegos de ejemplo y filtrar por tienda, género, instalación o favoritos.
@@ -270,3 +270,18 @@ El campo de visión se adapta al tamaño de la ventana para mantener completos l
 Validación: compilación de producción y ocho pruebas de navegador. El encuadre se comprueba a 1600 × 770, 1600 × 900 y 1024 × 650; se revisa visualmente la captura con suelo, techo y laterales. También se verifican la ampliación de carátula, las ocho portadas al acercarse, los filtros de biblioteca y el regreso al dormitorio. La captura siguiente utiliza una carátula de prueba, sin depender de los servidores externos de imágenes:
 
 ![Vista desde la puerta con suelo, techo y paredes laterales](docs/collection-doorway-room.png)
+
+
+## Diez huecos fijos por apartado (0.6.6)
+
+Se amplían la sala, las estanterías y las cajas. Todos los apartados reservan ahora diez posiciones en dos filas de cinco, con el mismo ancho y la misma altura. Las divisiones de madera dejan visibles los huecos libres: Carreras, por ejemplo, muestra su único juego y conserva nueve huecos vacíos. No se añaden juegos ni carátulas de relleno.
+
+La posición y el tamaño de cada apartado son fijos y ya no dependen del número de juegos o favoritos. Se mantienen la vista desde la puerta con suelo, techo y laterales, Favoritos y Más jugados en el fondo y los accesos a la biblioteca. La previsualización por ratón pasa a 230 × 345 píxeles; el acercamiento se ajusta al ancho de cinco cajas. La vista general encuadra toda la sala ampliada, mientras que el acercamiento permite consultar las portadas con detalle.
+
+Validación: compilación de producción y nueve pruebas de navegador. Se comprueban diez juegos ordenados por horas, dos filas de cinco, dimensiones iguales entre apartados llenos y vacíos, nueve huecos libres en Carreras, estabilidad al quitar favoritos, regreso al dormitorio y encuadre a 1600 × 770, 1600 × 900 y 1024 × 650. Las capturas utilizan carátulas de prueba independientes de las fuentes externas:
+
+![Sala ampliada con diez huecos por apartado](docs/collection-ten-slot-room.png)
+
+![Diez portadas en dos filas de cinco](docs/collection-ten-games.png)
+
+![Un juego y nueve huecos libres](docs/collection-nine-free-slots.png)

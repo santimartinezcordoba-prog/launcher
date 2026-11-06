@@ -1,7 +1,18 @@
 import {games,type Game} from './games';
 
-export const shelfCapacity=8;
-export const shelfWidth=3.3;
+export const shelfColumns=5;
+export const shelfRows=2;
+export const shelfCapacity=shelfColumns*shelfRows;
+export const caseWidth=.96;
+export const caseHeight=1.44;
+export const columnSpacing=1;
+export const rowSpacing=1.58;
+export const shelfWidth=5.18;
+export const shelfHeight=3.28;
+export const roomScale=1.56;
+export function shelfSlot(slot:number){
+ return {x:(slot%shelfColumns-(shelfColumns-1)/2)*columnSpacing,y:.86+(shelfRows-1-Math.floor(slot/shelfColumns))*rowSpacing};
+}
 export const genreGroups=[...new Set(games.map(g=>g.genre))]
  .sort((a,b)=>a.localeCompare(b,'es'))
  .map(genre=>({id:genre,title:genre,genre,games:games.filter(g=>g.genre===genre)}));
@@ -13,25 +24,20 @@ export function collectionShelves(favorites:number[]):ShelfGroup[]{
   {id:'most-played',title:'Más jugados',collection:'most-played',games:[...games].sort((a,b)=>b.hours-a.hours||a.title.localeCompare(b.title,'es'))}
  ];
 }
-export const baySpacing=3.36;
-export const cameraDistance=5;
+export const baySpacing=5.24;
+export const cameraDistance=5*roomScale;
 export type ShelfPlacement={bay:number;position:[number,number,number];rotation:number;height:number;rows:number};
 export function bayPosition(bay:number):[number,number,number]{
- if(bay===0)return [-6.3,-4,Math.PI/3];
- if(bay===4)return [6.3,-4,-Math.PI/3];
- return [(bay-2)*baySpacing,-5.5,0];
+ if(bay===0)return [-6.3*roomScale,-4*roomScale,Math.PI/3];
+ if(bay===4)return [6.3*roomScale,-4*roomScale,-Math.PI/3];
+ return [(bay-2)*baySpacing,-5.5*roomScale,0];
 }
-// Shelves follow the back wall and the two diagonal side walls of the room.
+// The ten-slot footprint and wall positions are independent of the owned games.
+const wallGroups=[['Acción','RPG'],['Estrategia','Creatividad','Simulación'],['favorites','most-played','Supervivencia'],['Aventura','Carreras','Puzles'],['Cooperativo','Plataformas','Exploración']];
 export function arrangeShelves(groups:ShelfGroup[]):ShelfPlacement[]{
- const heights=Array(5).fill(0),placed=new Map<number,ShelfPlacement>();
- const put=(index:number,bay:number)=>{
-  const rows=Math.min(shelfCapacity,groups[index].games.length)>4?2:1,height=rows===2?2.72:1.45;
-  const [x,z,rotation]=bayPosition(bay),y=heights[bay];
-  placed.set(index,{bay,position:[x,y,z],rotation,height,rows});heights[bay]+=height+.24;
- };
- put(12,2);put(13,2);put(0,0);put(3,4);
- const remaining=groups.map((_,index)=>index).filter(index=>!placed.has(index)).sort((a,b)=>Number(groups[b].games.length>4)-Number(groups[a].games.length>4)||a-b);
- const priority=[0,4,3,1,2];
- for(const index of remaining){const bay=[...priority].sort((a,b)=>heights[a]-heights[b])[0];put(index,bay);}
- return groups.map((_,index)=>placed.get(index)!);
+ return groups.map(group=>{
+  const bay=wallGroups.findIndex(ids=>ids.includes(group.id)),tier=wallGroups[bay].indexOf(group.id);
+  const [x,z,rotation]=bayPosition(bay);
+  return {bay,position:[x,tier*(shelfHeight+.24),z],rotation,height:shelfHeight,rows:shelfRows};
+ });
 }

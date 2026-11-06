@@ -6,13 +6,23 @@ async function enter(page:import('@playwright/test').Page){
 test('favoritos se actualizan al quitar estrellas y su biblioteca conserva el filtro',async({page})=>{
  await page.addInitScript(()=>localStorage.setItem('room-favorites',JSON.stringify([0,6,34])));await enter(page);
  await page.getByLabel('Elegir estantería por género').selectOption({label:'Favoritos'});await expect(page.getByTestId('collection-room')).toHaveAttribute('data-genre','Favoritos');
+ const fixedLayout=await page.getByTestId('collection-room').getAttribute('data-rack-layout');
  const favoriteShelf=page.getByRole('article',{name:'Estantería de Favoritos',exact:true});await expect(favoriteShelf.locator('.collection-cover:visible')).toHaveCount(3);
  await favoriteShelf.getByRole('button',{name:'Ver Hollow Knight',exact:true}).click();await page.getByRole('button',{name:'Favorito fijado',exact:true}).click();await page.getByRole('button',{name:'Cerrar detalles'}).click();
- await expect(favoriteShelf.locator('.collection-cover:visible')).toHaveCount(2);await expect(favoriteShelf.getByRole('button',{name:'Ver Hollow Knight',exact:true})).toHaveCount(0);
+ await expect(favoriteShelf.locator('.collection-cover:visible')).toHaveCount(2);await expect(page.getByTestId('collection-room')).toHaveAttribute('data-rack-layout',fixedLayout!);await expect(page.getByText('2 de 10 huecos ocupados · 2 juegos',{exact:true})).toBeVisible();await expect(favoriteShelf.getByRole('button',{name:'Ver Hollow Knight',exact:true})).toHaveCount(0);
  await page.getByRole('button',{name:'Ver biblioteca de Favoritos →',exact:true}).click();await expect(page.getByRole('navigation',{name:'Filtrar biblioteca'}).getByRole('button',{name:'Favoritos',exact:true})).toHaveAttribute('aria-pressed','true');await expect(page.locator('.card-details>button')).toHaveText(['Hades','Outer Wilds']);
 });
-test('más jugados muestra ocho juegos en orden de horas y abre la biblioteca ordenada',async({page})=>{
+test('más jugados muestra diez juegos en orden de horas y abre la biblioteca ordenada',async({page})=>{
  await enter(page);await page.getByLabel('Elegir estantería por género').selectOption({label:'Más jugados'});await expect(page.getByTestId('collection-room')).toHaveAttribute('data-genre','Más jugados');
- const shelf=page.getByRole('article',{name:'Estantería de Más jugados',exact:true});await expect(shelf.locator('.collection-cover:visible')).toHaveCount(8);expect(await shelf.locator('.collection-cover:visible').evaluateAll(nodes=>nodes.map(node=>Number((node as HTMLElement).dataset.gameId)))).toEqual([0,1,2,3,4,5,6,7]);await page.screenshot({path:'test-results/collection-most-played.png'});
+ const shelf=page.getByRole('article',{name:'Estantería de Más jugados',exact:true});await expect(shelf.locator('.collection-cover:visible')).toHaveCount(10);expect(await shelf.locator('.collection-cover:visible').evaluateAll(nodes=>nodes.map(node=>Number((node as HTMLElement).dataset.gameId)))).toEqual([0,1,2,3,4,5,6,7,8,9]);await page.screenshot({path:'test-results/collection-most-played.png'});
  await page.getByRole('button',{name:'Ver biblioteca de Más jugados →',exact:true}).click();await expect(page.getByLabel('Ordenar juegos')).toHaveValue('Más jugados');await expect(page.getByLabel('Género',{exact:true})).toHaveValue('Todos los géneros');await expect(page.locator('.game-card')).toHaveCount(60);await expect(page.locator('.card-details>button').first()).toHaveText('Hollow Knight');
+});
+
+test('un apartado con un juego conserva los diez huecos y el mismo tamaño que uno lleno',async({page})=>{
+ await enter(page);const room=page.getByTestId('collection-room');const fixedLayout=await room.getAttribute('data-rack-layout');
+ await page.getByLabel('Elegir estantería por género').selectOption({label:'Carreras'});await expect(room).toHaveAttribute('data-genre','Carreras');await expect(room).toHaveAttribute('data-motion','idle');
+ await expect(page.getByText('1 de 10 huecos ocupados · 1 juego',{exact:true})).toBeVisible();await expect(page.locator('.collection-cover:visible')).toHaveCount(1);
+ const sparseCover=await page.locator('.collection-cover:visible').first().boundingBox();await page.screenshot({path:'test-results/collection-nine-free-slots.png'});
+ await page.getByLabel('Elegir estantería por género').selectOption({label:'Más jugados'});await expect(room).toHaveAttribute('data-genre','Más jugados');await expect(room).toHaveAttribute('data-motion','idle');
+ await expect(page.locator('.collection-cover:visible')).toHaveCount(10);const fullCover=await page.locator('.collection-cover:visible').first().boundingBox();expect(Math.abs(sparseCover!.width-fullCover!.width)).toBeLessThan(1);expect(Math.abs(sparseCover!.height-fullCover!.height)).toBeLessThan(1);await expect(room).toHaveAttribute('data-rack-layout',fixedLayout!);
 });

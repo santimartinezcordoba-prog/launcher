@@ -7,4 +7,4 @@
 
 .genre-plaque:hover,.genre-plaque:focus-visible{transform:translate(-50%,-50%) scale(1)!important;z-index:5}
 .genre-plaque{padding:3px 8px;font:13px 'Segoe UI',sans-serif;background:#34291ceb;border-color:#b6a07780;border-radius:2px;color:#f0dfbd}.genre-plaque small{display:none}
-.collection-game-preview{position:absolute;width:190px;padding:7px;background:#17221df5;border:1px solid #d6b77f;border-radius:7px;z-index:10;pointer-events:none;box-shadow:0 8px 35px #0009}.collection-game-preview>div{position:relative;width:174px;height:261px;overflow:hidden}.collection-game-preview strong{display:block;padding:7px 2px 2px;font-size:12px;font-weight:500;line-height:1.4}
+.collection-game-preview{position:absolute;width:246px;padding:7px;background:#17221df5;border:1px solid #d6b77f;border-radius:7px;z-index:10;pointer-events:none;box-shadow:0 8px 35px #0009}.collection-game-preview>div{position:relative;width:230px;height:345px;overflow:hidden}.collection-game-preview strong{display:block;padding:7px 2px 2px;font-size:12px;font-weight:500;line-height:1.4}

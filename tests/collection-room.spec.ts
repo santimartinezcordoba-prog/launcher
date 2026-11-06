@@ -5,7 +5,7 @@ test('puerta, sala por géneros, portadas limitadas y biblioteca filtrada',async
  await expect(page.getByRole('button',{name:'Entrar en la sala de colección'})).toBeVisible();await page.screenshot({path:'test-results/bedroom-door.png'});
  await page.getByRole('button',{name:'Entrar en la sala de colección'}).click();const room=page.getByTestId('collection-room');await expect(room).toHaveAttribute('data-rendered','true');await expect.poll(()=>page.locator('.collection-cover:visible img').evaluateAll(nodes=>{const clip=document.querySelector('[data-testid="collection-room"]')!.getBoundingClientRect();return nodes.every(n=>{const b=n.getBoundingClientRect();return b.right<=clip.left||b.left>=clip.right||b.bottom<=clip.top||b.top>=clip.bottom||((n as HTMLImageElement).complete&&(n as HTMLImageElement).naturalWidth>0);});})).toBe(true);await page.screenshot({path:'test-results/collection-overview.png'});
  await page.getByLabel('Elegir estantería por género').selectOption({label:'Acción'});await expect(room).toHaveAttribute('data-genre','Acción');await expect(room).toHaveAttribute('data-motion','idle');
- await expect(page.locator('.collection-cover:visible')).toHaveCount(8);await page.screenshot({path:'test-results/collection-genre.png'});
+ await expect(page.locator('.collection-cover:visible')).toHaveCount(10);await page.screenshot({path:'test-results/collection-genre.png'});
  await page.getByRole('button',{name:'Ver Hades',exact:true}).click();await expect(page.getByRole('dialog',{name:'Detalles de Hades'})).toBeVisible();await page.keyboard.press('Escape');
  await page.getByRole('button',{name:'Ver biblioteca de Acción →',exact:true}).click();await expect(page.getByLabel('Género',{exact:true})).toHaveValue('Acción');
  expect(await page.locator('.game-card').count()).toBeGreaterThan(4);await page.keyboard.press('Escape');await expect(page.getByRole('region',{name:'Sala de colección'})).toBeVisible();
@@ -14,7 +14,7 @@ test('puerta, sala por géneros, portadas limitadas y biblioteca filtrada',async
 test('portadas legibles y biblioteca filtrada en tamaño compacto',async({page})=>{
  await page.setViewportSize({width:1024,height:650});await page.route(/^https:/,r=>r.abort());await page.goto('/');await page.getByRole('button',{name:'Entrar en la sala de colección'}).click();
  const room=page.getByTestId('collection-room');await expect(room).toHaveAttribute('data-rendered','true');await page.getByLabel('Elegir estantería por género').selectOption({label:'RPG'});await expect(room).toHaveAttribute('data-genre','RPG');await expect(room).toHaveAttribute('data-motion','idle');
- const covers=page.locator('.collection-cover:visible');expect(await covers.count()).toBeLessThanOrEqual(8);expect(await covers.count()).toBeGreaterThan(0);
+ const covers=page.locator('.collection-cover:visible');expect(await covers.count()).toBeLessThanOrEqual(10);expect(await covers.count()).toBeGreaterThan(0);
  for(const box of await covers.evaluateAll(nodes=>nodes.map(n=>({width:n.getBoundingClientRect().width,height:n.getBoundingClientRect().height})))){expect(box.width).toBeGreaterThanOrEqual(65);expect(box.height).toBeGreaterThanOrEqual(98);}
  await page.getByRole('button',{name:'Ver biblioteca de RPG →',exact:true}).click();await expect(page.getByLabel('Género',{exact:true})).toHaveValue('RPG');
 });
