@@ -65,7 +65,7 @@ function spineTexture(game: Game, favorite: boolean,art?:Artwork) {
 }
 
 // Small independent 3D inventory objects. No image layers are used in the room.
-function proceduralCollectible(id: string) {
+export function proceduralCollectible(id: string) {
   const group=new THREE.Group();
   const body=new THREE.MeshStandardMaterial({color:id==='cat'?'#bd8154':id==='robot'?'#a4c5c3':'#9875cc',roughness:.65});
   const dark=new THREE.MeshStandardMaterial({color:'#17272d',roughness:.4});

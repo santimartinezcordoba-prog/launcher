@@ -322,3 +322,28 @@ Validación: compilación, secuencia completa con animación, selección de un l
 ![Portadas centradas y lomos laterales](docs/collection-center-and-spines.png)
 
 ![Portada extraída para abrir su ficha](docs/collection-selected-case.png)
+
+
+## Personajes, tienda y primera persona (0.7.0)
+
+La entrada ofrece elegir entre El Bollo, El Fideo, El Pepino y El Cabezón. El primer personaje es gratuito; desbloquear cada uno de los demás cuesta 180 puntos. Cambiar entre personajes comprados no vuelve a cobrar puntos. La opción Elegir personaje al iniciar permite mostrar este selector en cada arranque o entrar directamente con el último aspecto.
+
+La tienda añade un apartado Personaje con una previsualización 3D. El Taller de tintes cuesta 120 puntos y desbloquea colores libres para cuerpo, manoplas, peto/mangas y zapatos. También hay gorro de pescador (80), corona (180), gafas (90), mirada despistada (60) y sonrisa (60). Los artículos y el aspecto de cada personaje se guardan en el navegador; cambiar de personaje recupera sus colores y accesorios. Las manos y mangas de primera persona reflejan el personaje y los colores elegidos.
+
+Las recompensas son pequeñas: bronce 1, plata 2, oro 4 y platino 8 puntos. El registro usa un identificador por juego y logro para impedir cobros repetidos al volver a abrir una ficha o recargar. Los logros que ya existían al migrar la partida no generan una entrega masiva automática; sus recompensas de ejemplo pueden recogerse desde la ficha. Al detectar logros nuevos, la conciliación los recompensa una sola vez. Los seis logros del juego de ejemplo y su platino suman 19 puntos. Los trofeos todavía son ilustrativos: no se han conectado cuentas reales.
+
+WASD o flechas mueven al personaje con colisiones contra paredes y muebles. El botón Activar ratón captura el cursor para mirar; también se puede mirar manteniendo el botón derecho. E o clic permiten interactuar con objetos cercanos; el aviso aparece a menos de 2,6 metros. Escape suelta el ratón y los diálogos pausan el movimiento. El botón Vista de habitación conserva el modo anterior, y Entrar en primera persona permite regresar.
+
+La puerta se abre con una animación y comunica el dormitorio con una biblioteca recorrible. Las estanterías muestran sus dos destacados; acercarse permite escoger una de sus cajas. El cajón Catálogo abre todos los juegos para recuperar los que no están expuestos. Solo se lleva una caja: al tomar otra, la anterior vuelve a su sitio. La caja se conserva al pasar de habitación. La biblioteca añade un segundo ordenador retro, manteniendo el ordenador moderno en el dormitorio. Acercarse al lector con una caja reproduce la apertura de la bandeja y la inserción del disco, y abre la ficha para confirmar Jugar o Descargar. El lanzamiento y las descargas mantienen el comportamiento de demostración; no se inician aplicaciones externas.
+
+Se agrupa el parquet del dormitorio y se simplifica la iluminación del modo caminable. Cambiar colores actualiza las manos y el modelo del probador sin recargar la habitación. Las pruebas anteriores se ejecutan explícitamente en la vista de habitación; las de primera persona verifican el modo nuevo desde una sesión limpia.
+
+Capturas con imágenes de reserva para los juegos:
+
+![Dormitorio en primera persona](docs/first-person-bedroom.png)
+
+![Probador del Bollo](docs/bollo-wardrobe.png)
+
+![Caja en la mano](docs/game-in-bollo-hands.png)
+
+![Ordenador retro y lector](docs/retro-disc-animation.png)
