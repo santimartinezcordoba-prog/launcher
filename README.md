@@ -362,3 +362,8 @@ La biblioteca ocupa menos espacio y expone hasta ocho juegos por sección en dos
 ## Cámara y pausa (0.7.3)
 
 La cámara sigue el ratón sobre la escena sin mantener botones. Escape pausa el movimiento y abre Continuar, Ajustes, Soporte y Salir. Salir vuelve a la vista general; los menús recuperan el cursor. En el navegador, la captura ilimitada del ratón sigue requiriendo una interacción del usuario.
+
+
+## Ratón capturado (0.7.4)
+
+Entrar captura el ratón tras completar la pantalla completa. Permite girar indefinidamente y mirar casi 90 grados al techo y al suelo. Escape libera el cursor y abre el menú de pausa. El navegador requiere el clic inicial para autorizar la captura.
