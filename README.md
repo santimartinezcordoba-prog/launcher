@@ -367,3 +367,8 @@ La cámara sigue el ratón sobre la escena sin mantener botones. Escape pausa el
 ## Ratón capturado (0.7.4)
 
 Entrar captura el ratón tras completar la pantalla completa. Permite girar indefinidamente y mirar casi 90 grados al techo y al suelo. Escape libera el cursor y abre el menú de pausa. El navegador requiere el clic inicial para autorizar la captura.
+
+
+## Transiciones sin interrupciones (0.7.5)
+
+Se elimina la pantalla de entrar y controlar la cámara. Se conserva el mismo lienzo y la captura del ratón al cambiar de sala. El ordenador retro está contra la pared de entrada, orientado al interior; sus colisiones y la animación del disco siguen su nueva posición. La primera interacción en la escena o una tecla de movimiento solicita la captura cuando el navegador la necesita.
