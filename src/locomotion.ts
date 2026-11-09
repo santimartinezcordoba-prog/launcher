@@ -9,7 +9,7 @@ export function canStand(point:WalkPoint,radius:number,area:WalkArea){
   return (point.x-x)**2+(point.z-z)**2<radius**2;
  });
 }
-export function walkStep(position:WalkPoint,direction:WalkPoint,seconds:number,area:WalkArea,speed=2.2,radius=.22):WalkPoint{
+export function walkStep(position:WalkPoint,direction:WalkPoint,seconds:number,area:WalkArea,speed=4.4,radius=.22):WalkPoint{
  const length=Math.hypot(direction.x,direction.z);if(!length||seconds<=0)return {...position};
  const distance=speed*Math.min(seconds,.1),steps=Math.max(1,Math.ceil(distance/(radius*.4))),dx=direction.x/length*distance/steps,dz=direction.z/length*distance/steps;
  let next={...position};

@@ -347,3 +347,8 @@ Capturas con imágenes de reserva para los juegos:
 ![Caja en la mano](docs/game-in-bollo-hands.png)
 
 ![Ordenador retro y lector](docs/retro-disc-animation.png)
+
+
+## Biblioteca compacta y movimiento (0.7.1)
+
+La sala de la biblioteca es más pequeña y muestra hasta diez juegos por sección, en dos filas de cinco. La velocidad al caminar aumenta. El primer clic en la escena captura el ratón para mirar; Escape lo libera y también se puede mirar con el botón derecho. La biblioteca completa sigue disponible desde el catálogo.
