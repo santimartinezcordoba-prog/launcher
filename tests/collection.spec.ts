@@ -1,19 +1,20 @@
+import {computerApp} from './computer-helpers';
 import { test, expect } from '@playwright/test';
 import { chooseFloor } from './editor-helpers';
 test('misión, compra sin duplicados, inventario y persistencia',async({page})=>{
  await page.goto('/');
- await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
+ await computerApp(page,'Tienda');
  await expect(page.getByTestId('points')).toHaveText('0');
  await expect(page.getByRole('button',{name:'Comprar · 100 puntos'})).toBeDisabled();
  await page.keyboard.press('Escape');
  await page.getByRole('button',{name:'Entrar en la sala de colección'}).press('Enter');
  await page.keyboard.press('Escape');
- await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
+ await computerApp(page,'Tienda');
  await page.getByRole('button',{name:'Misiones',exact:true}).click();
  await page.getByRole('button',{name:'Reclamar',exact:true}).click();
  await expect(page.getByTestId('points')).toHaveText('100');
  await expect(page.getByRole('button',{name:'Reclamado',exact:true})).toBeDisabled();
- await page.getByRole('button',{name:'Tienda',exact:true}).click();
+ await page.getByRole('navigation',{name:'Colección'}).getByRole('button',{name:'Tienda',exact:true}).click();
  await page.getByRole('button',{name:'Comprar · 100 puntos'}).click();
  await expect(page.getByTestId('points')).toHaveText('0');
  await expect(page.getByRole('button',{name:'En tu inventario'})).toBeDisabled();
@@ -25,7 +26,7 @@ test('misión, compra sin duplicados, inventario y persistencia',async({page})=>
  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-placed','cat');
  await page.reload();
  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-placed','cat');
- await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
+ await computerApp(page,'Tienda');
  await expect(page.getByTestId('points')).toHaveText('0');
  await page.getByRole('button',{name:'Inventario',exact:true}).click();
  await page.getByRole('button',{name:'Guardar en inventario'}).click();

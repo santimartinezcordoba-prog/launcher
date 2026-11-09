@@ -1,3 +1,4 @@
+import {computerApp} from './computer-helpers';
 import {test,expect} from '@playwright/test';
 import {chooseFloor,chooseShelf} from './editor-helpers';
 
@@ -25,7 +26,7 @@ test('contorno de puerta sin render extra y biblioteca desde la sala',async({pag
 test('muebles y figuras: plano, baldas, colisiones, giro, cancelación y persistencia',async({page})=>{
  await page.addInitScript(()=>{if(!localStorage.getItem('room-collection-v1'))localStorage.setItem('room-collection-v1',JSON.stringify({claimed:['shelf','discover','mood'],owned:['cat'],equipped:[],seen:[0,1,2],shelf:true,mood:true}));});
  await page.goto('/');const room=page.getByTestId('room-3d');await expect(room).toHaveAttribute('data-rendered','true');
- await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
+ await computerApp(page,'Tienda');
  await page.locator('.shop-items article').filter({has:page.getByRole('heading',{name:'Planta de interior'})}).getByRole('button').click();
  await expect(page.getByTestId('points')).toHaveText('240');
  await page.getByRole('button',{name:'Inventario',exact:true}).click();
@@ -47,7 +48,7 @@ test('muebles y figuras: plano, baldas, colisiones, giro, cancelación y persist
  await page.reload();await expect(room).toHaveAttribute('data-positions',/"plant":\[0,0,0.4\]/);
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('room-collection-v1')!));
  expect(saved.arranged.plant.rotation).toBe(15);expect(saved.arranged.cat.surface).toBe('shelves');
- await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
+ await computerApp(page,'Tienda');
  await page.getByRole('button',{name:'Inventario',exact:true}).click();
  await page.locator('.shop-items article').filter({has:page.getByRole('heading',{name:'Planta de interior'})}).getByRole('button',{name:'Mover objeto'}).click();
  await chooseFloor(page,1,1);await page.getByRole('button',{name:'Cancelar colocación'}).click();

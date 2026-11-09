@@ -1,9 +1,10 @@
+import {computerApp} from './computer-helpers';
 import {test,expect} from '@playwright/test';
 import {chooseFloor} from './editor-helpers';
 async function canvasPoint(page:import('@playwright/test').Page,x:number,z:number){
  return page.locator('.placement-grid').evaluate((svg,{x,z})=>{const l=svg.querySelectorAll<SVGPolylineElement>('.grid-line'),a=l[0].points.getItem(0),b=l[0].points.getItem(1),c=l[32].points.getItem(0),r=svg.getBoundingClientRect();return {x:r.x+a.x+(c.x-a.x)*(x+3.2)/6.4,y:r.y+a.y+(b.y-a.y)*(z+3.5)/7};},{x,z});
 }
-async function openInventory(page:import('@playwright/test').Page){await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');await page.getByRole('button',{name:'Inventario',exact:true}).click();}
+async function openInventory(page:import('@playwright/test').Page){await computerApp(page,'Tienda');await page.getByRole('button',{name:'Inventario',exact:true}).click();}
 test('arrastra en el plano, confirma la posición final y conserva adornos sobre una mesa al moverla',async({page})=>{
  await page.addInitScript(()=>{if(!localStorage.getItem('room-collection-v1'))localStorage.setItem('room-collection-v1',JSON.stringify({owned:['table','cat'],equipped:['table','cat'],claimed:['shelf','discover','mood'],seen:[0,1,2],arranged:{table:{surface:'floor',x:0,y:0,z:.4,rotation:0},cat:{surface:'table',x:0,y:.69,z:.4,rotation:0}}}));});
  await page.goto('/');const room=page.getByTestId('room-3d');await expect(room).toHaveAttribute('data-placed','cat|table');

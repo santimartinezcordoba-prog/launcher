@@ -1,3 +1,4 @@
+import {makeMirror} from './mirror';
 import { useEffect, useRef, useState } from 'react';
 import { GameArt } from './game-art';
 import { BookOpen } from 'lucide-react';
@@ -35,6 +36,7 @@ function disposeTree(root: THREE.Object3D) {
   const materials = new Set<THREE.Material>();
   const textures = new Set<THREE.Texture>();
   root.traverse(o => {
+    o.userData.dispose?.();
     if (!(o instanceof THREE.Mesh)) return;
     geometries.add(o.geometry);
     for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
@@ -66,6 +68,7 @@ function spineTexture(game: Game, favorite: boolean,art?:Artwork) {
 
 // Small independent 3D inventory objects. No image layers are used in the room.
 export function proceduralCollectible(id: string) {
+  if(id==='mirror')return makeMirror();
   const group=new THREE.Group();
   const body=new THREE.MeshStandardMaterial({color:id==='cat'?'#bd8154':id==='robot'?'#a4c5c3':'#9875cc',roughness:.65});
   const dark=new THREE.MeshStandardMaterial({color:'#17272d',roughness:.4});
@@ -160,7 +163,7 @@ class RoomEngine {
     this.sun.castShadow=true;this.sun.shadow.mapSize.set(1024,1024);
     Object.assign(this.sun.shadow.camera,{left:-5,right:5,top:5,bottom:-5,near:.1,far:15});
     this.sun.shadow.normalBias=.035;this.scene.add(this.sun,this.sun.target);
-    this.appearance=new RoomAppearance(this.scene,this.renderer,this.hemisphere,this.sun);
+    this.appearance=new RoomAppearance(this.scene,this.renderer,this.hemisphere,this.sun,()=>{this.dirty=true;this.host.dataset.wallpaper=this.appearance.wallpaperSource;});
     this.resizeObserver=new ResizeObserver(()=>this.resize());this.resizeObserver.observe(host);this.resize();
     this.renderer.domElement.addEventListener('click',this.click);
     this.renderer.domElement.addEventListener('pointerdown',this.down);

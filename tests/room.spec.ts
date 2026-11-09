@@ -1,3 +1,4 @@
+import {legacySettings} from './computer-helpers';
 import { test, expect } from '@playwright/test';
 
 test('habitación: puerta, colección, ficha y vuelta con Escape', async ({page})=>{
@@ -66,11 +67,11 @@ test('juego sin instalar muestra Descargar y explica el estado de demostración'
 test('ordenador, opciones de accesibilidad y personalización se conservan',async({page})=>{
   await page.addInitScript(()=>localStorage.setItem('room-collection-v1',JSON.stringify({claimed:['shelf'],owned:['customize'],equipped:[],seen:[],shelf:true,mood:false})));
   await page.goto('/');
-  await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
+  await legacySettings(page);
   await expect(page.getByRole('dialog')).toContainText('Riot Games');
   await page.getByRole('checkbox',{name:/Reducir animaciones/}).check();
   await page.keyboard.press('Escape');
-  await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
+  await legacySettings(page);
   await page.getByRole('button',{name:/^Personalizar/}).click();
   await page.getByRole('button',{name:/Noche Solo una partida/}).click();
   await page.getByRole('button',{name:'Paredes: Azul bruma'}).click();
@@ -81,7 +82,7 @@ test('ordenador, opciones de accesibilidad y personalización se conservan',asyn
   await expect(page.locator('main')).toHaveClass(/reduce-motion/);
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-wall','#4a637d');
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-bedding','#985a68');
-  await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');
+  await legacySettings(page);
   await page.getByRole('button',{name:/^Personalizar/}).click();
   await page.getByRole('button',{name:'Restaurar habitación original'}).click();
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-wall','original');

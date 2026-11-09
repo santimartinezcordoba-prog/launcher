@@ -1,7 +1,7 @@
 import { placementSpots } from './placement';
 export type Surface='floor'|'shelves'|'desk'|'nightstand'|'cabinet'|'table'|'stool';
 export type Arrangement={surface:Surface;x:number;y:number;z:number;rotation:number};
-export const furniture:Record<string,{width:number;depth:number;name:string}>={plant:{width:.5,depth:.5,name:'Planta de interior'},stool:{width:.55,depth:.55,name:'Taburete de roble'},table:{width:.85,depth:.6,name:'Mesa auxiliar'}};
+export const furniture:Record<string,{width:number;depth:number;name:string}>={mirror:{width:1.1,depth:.35,name:'Espejo de cuerpo entero'},plant:{width:.5,depth:.5,name:'Planta de interior'},stool:{width:.55,depth:.55,name:'Taburete de roble'},table:{width:.85,depth:.6,name:'Mesa auxiliar'}};
 export const surfaceNames:Record<Surface,string>={floor:'Suelo',shelves:'Baldas de colección',desk:'Escritorio',nightstand:'Mesilla',cabinet:'Sobre la estantería',table:'Mesa auxiliar',stool:'Taburete'};
 export type SurfaceArea={x:number;z:number;y:number;width:number;depth:number;rotation:number};
 export function surfaceArea(surface:Surface,arranged:Record<string,Arrangement>):SurfaceArea|undefined{

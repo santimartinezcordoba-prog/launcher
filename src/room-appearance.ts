@@ -1,3 +1,4 @@
+import {currentWallpaper} from './wallpaper';
 import * as THREE from 'three';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 
@@ -10,12 +11,27 @@ export class RoomAppearance {
   private monitor=new THREE.PointLight('#9b8bff',1.4,2.4,2);
   private maps:THREE.Texture[]=[];
   private disposed=false;
+  private screens=new Set<THREE.MeshStandardMaterial>();
+  private wallpaperTexture?:THREE.Texture;
+  private wallpaperGeneration=0;
+  wallpaperSource='';
+  private wallpaperChanged=()=>{void this.updateWallpaper();};
+  private async updateWallpaper(){
+    if(!this.screens.size||this.disposed)return;
+    const generation=++this.wallpaperGeneration,source=currentWallpaper();
+    try{const texture=await new THREE.TextureLoader().loadAsync(source);if(this.disposed||generation!==this.wallpaperGeneration){texture.dispose();return;}texture.colorSpace=THREE.SRGBColorSpace;texture.flipY=false;
+      const old=this.wallpaperTexture;this.wallpaperTexture=texture;this.maps.push(texture);
+      for(const material of this.screens){material.map=texture;material.emissiveMap=texture;material.color.set('#ffffff');material.emissive.set('#ffffff');material.emissiveIntensity=.7;material.needsUpdate=true;}
+      old?.dispose();if(old)this.maps=this.maps.filter(t=>t!==old);this.wallpaperSource=source;this.onChange();
+    }catch{}
+  }
   private loaded:Promise<void>;
   private wood?:THREE.Texture;
   private linen?:THREE.Texture;
   private fabric?:THREE.Texture;
 
-  constructor(private scene:THREE.Scene,private renderer:THREE.WebGLRenderer,private fill:THREE.HemisphereLight,private key:THREE.DirectionalLight) {
+  constructor(private scene:THREE.Scene,private renderer:THREE.WebGLRenderer,private fill:THREE.HemisphereLight,private key:THREE.DirectionalLight,private onChange:()=>void=()=>{}) {
+    window.addEventListener('room-wallpaper',this.wallpaperChanged);
     RectAreaLightUniformsLib.init();
     this.fixtures.name='Luz interior y luminarias';this.scene.add(this.fixtures);
     this.key.position.set(-3.8,2.22,-1.25);this.key.target.position.set(.6,.35,-2.8);
@@ -61,7 +77,7 @@ export class RoomAppearance {
       if(!(o instanceof THREE.Mesh))return;
       for(const material of Array.isArray(o.material)?o.material:[o.material]){
         if(!(material instanceof THREE.MeshStandardMaterial)||seen.has(material))continue;
-        seen.add(material);const name=material.name.toLowerCase();
+        seen.add(material);const name=material.name.toLowerCase();if(name.startsWith('screen'))this.screens.add(material);
         if(name.includes('roble')||name.includes('nogal')){
           const variation=name.includes('parquet')?.88+(material.color.r-.27)*2:1;
           if(this.wood){material.map=this.wood;material.bumpMap=this.wood;material.bumpScale=.0007;material.color.setRGB(2.2*variation,1.7*variation,1.25*variation);}
@@ -90,6 +106,7 @@ export class RoomAppearance {
         const shade=(o.material as THREE.MeshStandardMaterial).clone();shade.emissive.set('#ffca8a');shade.emissiveIntensity=name.includes('plafon')?.55:.4;o.material=shade;
       }
     });
+    await this.updateWallpaper();
   }
 
   mood(mode:string){
@@ -105,5 +122,5 @@ export class RoomAppearance {
     this.renderer.toneMappingExposure=night?.95:1.05;
   }
 
-  dispose(){this.disposed=true;this.fixtures.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose();}});this.maps.forEach(t=>t.dispose());this.fixtures.removeFromParent();}
+  dispose(){this.disposed=true;window.removeEventListener('room-wallpaper',this.wallpaperChanged);this.fixtures.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose();}});this.maps.forEach(t=>t.dispose());this.fixtures.removeFromParent();}
 }

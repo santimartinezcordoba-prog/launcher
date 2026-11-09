@@ -1,4 +1,4 @@
-const { app, BrowserWindow, session, protocol, net, shell } = require('electron');
+const { app, BrowserWindow, session, protocol, net, shell, ipcMain } = require('electron');
 const path = require('node:path');
 const {storeDetails}=require('./store-details.cjs');
 const { pathToFileURL } = require('node:url');
@@ -8,6 +8,7 @@ protocol.registerSchemesAsPrivileged([
   { scheme: 'room', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }
 ]);
 app.whenReady().then(() => {
+  ipcMain.handle('room:get-wallpaper',event=>event.senderFrame?.url==='room://launcher/index.html'?require('./wallpaper.cjs').getWallpaper():null);
   const dist = path.resolve(__dirname, '..', 'dist');
   protocol.handle('room', async request => {
     if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Method not allowed', { status: 405 });
@@ -28,7 +29,7 @@ app.whenReady().then(() => {
   const win = new BrowserWindow({
     width: 1440, height: 920, minWidth: 1000, minHeight: 650,
     backgroundColor: '#171716', autoHideMenuBar: true,
-    webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true }
+    webPreferences: { preload:path.join(__dirname,'preload.cjs'), nodeIntegration: false, contextIsolation: true, sandbox: true }
   });
   win.webContents.setWindowOpenHandler(({url}) => {
     try{const u=new URL(url);if(u.protocol==='https:'&&['github.com','store.steampowered.com','store.epicgames.com','www.ubisoft.com','www.xbox.com','www.ea.com','shop.battle.net','www.riotgames.com','accounts.cdprojektred.com','www.thewitcher.com','www.cyberpunk.net'].includes(u.hostname))void shell.openExternal(u.href);}catch{}

@@ -377,3 +377,12 @@ Se elimina la pantalla de entrar y controlar la cámara. Se conserva el mismo li
 ## Salto y espejo (0.7.6)
 
 Espacio hace saltar al personaje, con caída y aterrizaje; los menús pausan la física. El dormitorio incorpora un espejo con reflejo en tiempo real de la habitación y el aspecto actual del personaje. La mesita del catálogo está contra la pared de entrada de la biblioteca, con colisiones y cajón adaptados a su orientación.
+
+
+## BOLL/OS y espejo comprable (0.8.0)
+
+El ordenador del dormitorio abre BOLL/OS, un escritorio ficticio con arranque y estética de ocho bits. Tienda utiliza las compras, puntos, misiones e inventario existentes; Biblioteca abre los juegos; Ajustes permite cambiar el fondo y las animaciones, y acceder a la personalización y plataformas. Comunidad es una vista previa sin conexión social activa. Escape o Salir del ordenador vuelve a la habitación.
+
+El espejo ya no aparece gratis: cuesta 80 puntos. Se coloca sobre el suelo desde el inventario, se puede girar, mover y guardar. Una vez colocado refleja la escena y, en primera persona, el personaje actual.
+
+El fondo se aplica tanto a BOLL/OS como a las pantallas 3D del dormitorio. En Electron se intenta obtener el fondo actual mediante las preferencias de Windows, macOS, GNOME o KDE. No se cambian los ajustes del sistema. Algunos escritorios, fondos animados o configuraciones con varias pantallas pueden no devolver una imagen utilizable; en ese caso se ofrece importarla. En la web es necesario seleccionar la imagen desde Ajustes: el navegador no puede leer el fondo real. La imagen se redimensiona y guarda localmente; una elección manual se conserva hasta sincronizar de nuevo. La sincronización nativa requiere ejecutar la versión de escritorio con `npm run desktop`.

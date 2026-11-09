@@ -1,3 +1,4 @@
+import {computerApp} from './computer-helpers';
 import {test,expect} from '@playwright/test';
 test('puerta, sala por géneros, portadas limitadas y biblioteca filtrada',async({page})=>{
  await page.route(/^https:/,r=>r.abort());await page.goto('/');
@@ -23,7 +24,7 @@ test('los adornos de la estantería retirada vuelven al inventario sin perder co
  await page.route(/^https:/,r=>r.abort());await page.addInitScript(()=>{if(!localStorage.getItem('room-collection-v1'))localStorage.setItem('room-collection-v1',JSON.stringify({owned:['cat'],equipped:['cat'],claimed:['shelf'],arranged:{cat:{surface:'cabinet',x:.2,y:2.34,z:-3.2,rotation:0}}}));});
  await page.goto('/');await expect(page.getByTestId('room-3d')).toHaveAttribute('data-rendered','true');
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('room-collection-v1')!));expect(saved.owned).toEqual(['cat']);expect(saved.equipped).toEqual([]);expect(saved.arranged).toEqual({});
- await page.getByRole('button',{name:'Abrir ajustes desde el ordenador'}).press('Enter');await page.getByRole('button',{name:'Inventario',exact:true}).click();await expect(page.getByRole('heading',{name:'Gato de medianoche'})).toBeVisible();await expect(page.getByTestId('points')).toHaveText('0');
+ await computerApp(page,'Tienda');await page.getByRole('button',{name:'Inventario',exact:true}).click();await expect(page.getByRole('heading',{name:'Gato de medianoche'})).toBeVisible();await expect(page.getByTestId('points')).toHaveText('0');
 });
 test('si no se puede crear la sala 3D se conserva la biblioteca',async({page})=>{
  await page.route(/^https:/,r=>r.abort());await page.goto('/');await expect(page.getByTestId('room-3d')).toHaveAttribute('data-rendered','true');
