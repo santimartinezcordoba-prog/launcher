@@ -352,3 +352,8 @@ Capturas con imágenes de reserva para los juegos:
 ## Biblioteca compacta y movimiento (0.7.1)
 
 La sala de la biblioteca es más pequeña y muestra hasta diez juegos por sección, en dos filas de cinco. La velocidad al caminar aumenta. El primer clic en la escena captura el ratón para mirar; Escape lo libera y también se puede mirar con el botón derecho. La biblioteca completa sigue disponible desde el catálogo.
+
+
+## Sala más compacta (0.7.2)
+
+La biblioteca ocupa menos espacio y expone hasta ocho juegos por sección en dos filas de cuatro. El primer clic en la escena solicita pantalla completa y captura el ratón; el navegador puede rechazar la solicitud y permite salir de ella por sus propios controles.
