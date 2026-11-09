@@ -37,3 +37,9 @@ test('se salta sobre muebles, se aterriza encima y se cae al salir de su borde',
  player={x:4.7,z:0,height:3,velocity:jumpSpeed,grounded:false};for(let i=0;i<30;i++)player=playerStep(player,{x:1,z:0},.1,area);
  expect(player.x).toBeLessThanOrEqual(4.78);expect(player.height).toBeGreaterThanOrEqual(0);
 });
+
+test('el salto reducido alcanza muebles sin elevar al personaje más de dos metros',async()=>{
+ const {playerStep,jumpSpeed}=await import('../src/locomotion');const area:WalkArea={minX:-4,maxX:4,minZ:-4,maxZ:4,obstacles:[]};let player={x:0,z:0,height:0,velocity:jumpSpeed,grounded:false},peak=0;
+ for(let i=0;i<120;i++){player=playerStep(player,{x:0,z:0},.016,area);peak=Math.max(peak,player.height);}
+ expect(peak).toBeGreaterThan(1.56);expect(peak).toBeLessThan(2);expect(player.grounded).toBe(true);expect(player.height).toBe(0);
+});

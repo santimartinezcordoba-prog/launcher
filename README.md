@@ -400,3 +400,8 @@ La copia automática del fondo también funciona con el servidor local (`npm run
 El ordenador retro de la biblioteca utiliza el modelo GLB aportado por el usuario, con monitor, torre, teclado y ratón. El archivo está incluido en la aplicación y no necesita una descarga externa. Se ha simplificado de aproximadamente 1,5 millones a 150.000 triángulos y sus texturas se han reducido para mantener la carga fluida; el área de interacción usa una malla sencilla independiente.
 
 La mesa y la acción de insertar un juego se mantienen. Como el ordenador original es una sola malla sin bandeja articulada, se utiliza una bandeja animada durante la inserción. Si el modelo no se puede cargar, se conserva un ordenador de reserva y se muestra un aviso.
+
+
+## Salto ajustado (0.8.3)
+
+Se reduce la altura del salto manteniendo la posibilidad de subir a la cama, el escritorio y los ordenadores. La colisión del ordenador retro se ajusta al tamaño de su modelo.
