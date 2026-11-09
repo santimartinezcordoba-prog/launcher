@@ -1,7 +1,9 @@
 import { defineConfig } from 'vite';
 import { createRequire } from 'node:module';
 const { storeDetails } = createRequire(import.meta.url)('./electron/store-details.cjs');
+const {localWallpaperApi}=createRequire(import.meta.url)('./electron/local-wallpaper-api.cjs');
 function storeApi(server: any) {
+    server.middlewares.use(localWallpaperApi());
     server.middlewares.use(async (req: any, res: any, next: any) => {
         const match = /^\/api\/store-details\/(\d{1,10})$/.exec((req.url ?? '').split('?')[0]); if (!match) return next();
         if (req.method !== 'GET') { res.statusCode = 405; return res.end(); }

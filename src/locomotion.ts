@@ -1,6 +1,6 @@
 // Ground-plane movement shared by the bedroom and the collection room.
 export type WalkPoint={x:number;z:number};
-export type WalkObstacle={minX:number;maxX:number;minZ:number;maxZ:number};
+export type WalkObstacle={minX:number;maxX:number;minZ:number;maxZ:number;height?:number};
 export type WalkArea=WalkObstacle&{obstacles:WalkObstacle[]};
 export function canStand(point:WalkPoint,radius:number,area:WalkArea){
  if(point.x-radius<area.minX||point.x+radius>area.maxX||point.z-radius<area.minZ||point.z+radius>area.maxZ)return false;
@@ -53,4 +53,25 @@ export type JumpState={height:number;velocity:number};
 export function jumpStep(state:JumpState,seconds:number):JumpState{
  const dt=Math.max(0,Math.min(seconds,.1)),height=state.height+state.velocity*dt-7.5*dt*dt;
  return height<=0?{height:0,velocity:0}:{height,velocity:state.velocity-15*dt};
+}
+
+export type PlayerState=WalkPoint&JumpState&{grounded:boolean};
+export const jumpSpeed=10;
+function overlaps(point:WalkPoint,box:WalkObstacle,radius=.22){const x=Math.max(box.minX,Math.min(box.maxX,point.x)),z=Math.max(box.minZ,Math.min(box.maxZ,point.z));return (point.x-x)**2+(point.z-z)**2<radius*radius;}
+/** Swept movement uses feet height: furniture has sides and a top you can land on. */
+export function playerStep(state:PlayerState,direction:WalkPoint,seconds:number,area:WalkArea,maxHeight=Infinity):PlayerState{
+ let next={...state};const count=Math.max(1,Math.ceil(Math.min(seconds,.1)/.008)),dt=Math.max(0,Math.min(seconds,.1))/count;
+ for(let i=0;i<count;i++){
+  const previousHeight=next.height;
+  const walkArea={...area,obstacles:area.obstacles.filter(box=>(box.height??Infinity)>next.height+.015)};
+  Object.assign(next,walkStep(next,direction,dt,walkArea));
+  let height=next.height+next.velocity*dt-7.5*dt*dt;next.velocity-=15*dt;
+  if(height>maxHeight){height=maxHeight;next.velocity=Math.min(0,next.velocity);}
+  let floor=0;
+  if(next.velocity<=0)for(const box of area.obstacles){const top=box.height??Infinity;if(top<=previousHeight+.015&&top>=height&&overlaps(next,box))floor=Math.max(floor,top);}
+  next.grounded=height<=floor;
+  if(next.grounded){height=floor;next.velocity=0;}
+  next.height=height;
+ }
+ return next;
 }

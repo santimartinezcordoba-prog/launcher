@@ -386,3 +386,10 @@ El ordenador del dormitorio abre BOLL/OS, un escritorio ficticio con arranque y 
 El espejo ya no aparece gratis: cuesta 80 puntos. Se coloca sobre el suelo desde el inventario, se puede girar, mover y guardar. Una vez colocado refleja la escena y, en primera persona, el personaje actual.
 
 El fondo se aplica tanto a BOLL/OS como a las pantallas 3D del dormitorio. En Electron se intenta obtener el fondo actual mediante las preferencias de Windows, macOS, GNOME o KDE. No se cambian los ajustes del sistema. Algunos escritorios, fondos animados o configuraciones con varias pantallas pueden no devolver una imagen utilizable; en ese caso se ofrece importarla. En la web es necesario seleccionar la imagen desde Ajustes: el navegador no puede leer el fondo real. La imagen se redimensiona y guarda localmente; una elección manual se conserva hasta sincronizar de nuevo. La sincronización nativa requiere ejecutar la versión de escritorio con `npm run desktop`.
+
+
+## Saltos sobre muebles y fondo automático en localhost (0.8.1)
+
+Los muebles tienen altura: Espacio permite saltar por encima, aterrizar sobre cama, escritorio, ordenador y muebles colocados, saltar desde ellos y caer al salir del borde. Se conservan los límites de la sala. La cámara se mantiene bajo el techo del dormitorio.
+
+La copia automática del fondo también funciona con el servidor local (`npm run dev` y `npm run preview`) abierto en `localhost` o `127.0.0.1`. Reinicia el servidor después de actualizar. El endpoint solo entrega el fondo a solicitudes locales del mismo origen; al acceder desde una IP de red o una web remota, se puede importar la imagen en Ajustes. Las elecciones manuales se respetan y Ajustes permite volver a sincronizar. Se corrige además la lectura de fondos KDE configurados mediante una carpeta de tema.
