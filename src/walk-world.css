@@ -3,3 +3,5 @@
 .view-library>.walk-world{visibility:hidden}
 
 .view-collection>.walk-toggle{top:auto;left:auto;right:22px;bottom:90px}
+
+.walk-canvas canvas{cursor:none}.walk-pause-shade{position:absolute;inset:0;z-index:20;display:grid;place-items:center;background:#06100bc9;backdrop-filter:blur(6px)}.walk-pause{width:min(420px,90vw);padding:30px;background:#18241f;border:1px solid #d6bb8270;border-radius:14px;display:flex;flex-direction:column;gap:14px;color:#f3dfbd}.walk-pause h2{margin:0 0 12px;font:30px Georgia,serif}.walk-pause p{font-size:14px;line-height:1.7}.walk-pause button,.walk-pause a{padding:13px;border:1px solid #d6bb8255;border-radius:7px;text-align:center}.walk-pause button:hover,.walk-pause a:hover{background:#d6bb8220}
