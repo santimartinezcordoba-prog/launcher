@@ -48,3 +48,9 @@ export function safeSpawn(position:WalkPoint,area:WalkArea,radius=.22):WalkPoint
  for(let z=area.minZ+radius;z<=area.maxZ-radius;z+=.5)for(let x=area.minX+radius;x<=area.maxX-radius;x+=.5)if(canStand({x,z},radius,area))return {x,z};
  return {...position};
 }
+
+export type JumpState={height:number;velocity:number};
+export function jumpStep(state:JumpState,seconds:number):JumpState{
+ const dt=Math.max(0,Math.min(seconds,.1)),height=state.height+state.velocity*dt-7.5*dt*dt;
+ return height<=0?{height:0,velocity:0}:{height,velocity:state.velocity-15*dt};
+}

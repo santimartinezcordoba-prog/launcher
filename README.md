@@ -372,3 +372,8 @@ Entrar captura el ratón tras completar la pantalla completa. Permite girar inde
 ## Transiciones sin interrupciones (0.7.5)
 
 Se elimina la pantalla de entrar y controlar la cámara. Se conserva el mismo lienzo y la captura del ratón al cambiar de sala. El ordenador retro está contra la pared de entrada, orientado al interior; sus colisiones y la animación del disco siguen su nueva posición. La primera interacción en la escena o una tecla de movimiento solicita la captura cuando el navegador la necesita.
+
+
+## Salto y espejo (0.7.6)
+
+Espacio hace saltar al personaje, con caída y aterrizaje; los menús pausan la física. El dormitorio incorpora un espejo con reflejo en tiempo real de la habitación y el aspecto actual del personaje. La mesita del catálogo está contra la pared de entrada de la biblioteca, con colisiones y cajón adaptados a su orientación.
