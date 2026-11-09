@@ -393,3 +393,10 @@ El fondo se aplica tanto a BOLL/OS como a las pantallas 3D del dormitorio. En El
 Los muebles tienen altura: Espacio permite saltar por encima, aterrizar sobre cama, escritorio, ordenador y muebles colocados, saltar desde ellos y caer al salir del borde. Se conservan los límites de la sala. La cámara se mantiene bajo el techo del dormitorio.
 
 La copia automática del fondo también funciona con el servidor local (`npm run dev` y `npm run preview`) abierto en `localhost` o `127.0.0.1`. Reinicia el servidor después de actualizar. El endpoint solo entrega el fondo a solicitudes locales del mismo origen; al acceder desde una IP de red o una web remota, se puede importar la imagen en Ajustes. Las elecciones manuales se respetan y Ajustes permite volver a sincronizar. Se corrige además la lectura de fondos KDE configurados mediante una carpeta de tema.
+
+
+## Ordenador retro de la biblioteca (0.8.2)
+
+El ordenador retro de la biblioteca utiliza el modelo GLB aportado por el usuario, con monitor, torre, teclado y ratón. El archivo está incluido en la aplicación y no necesita una descarga externa. Se ha simplificado de aproximadamente 1,5 millones a 150.000 triángulos y sus texturas se han reducido para mantener la carga fluida; el área de interacción usa una malla sencilla independiente.
+
+La mesa y la acción de insertar un juego se mantienen. Como el ordenador original es una sola malla sin bandeja articulada, se utiliza una bandeja animada durante la inserción. Si el modelo no se puede cargar, se conserva un ordenador de reserva y se muestra un aviso.
