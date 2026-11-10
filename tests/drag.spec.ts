@@ -17,7 +17,7 @@ test('arrastra en el plano, confirma la posición final y conserva adornos sobre
  await page.mouse.move(b.x,b.y,{steps:8});await page.mouse.up();await expect(room).toHaveAttribute('data-dragging','false');
  await expect(room).toHaveAttribute('data-positions',/"table":\[0.8,0,1.6\]/);
  await expect(room).toHaveAttribute('data-positions',/"cat":\[0.8,0.69,1.6\]/);
- await page.getByRole('button',{name:'Guardar posición'}).click();await page.getByRole('button',{name:'Salir del ordenador [Esc]'}).click();
+ await page.getByRole('button',{name:'Guardar posición'}).click();await page.getByRole('button',{name:'Salir del ordenador'}).click();
  await page.reload();await page.getByRole('button',{name:/Entrar en la habitación/}).click();await expect(room).toHaveAttribute('data-positions',/"cat":\[0.8,0.69,1.6\]/);
  await openInventory(page);
  await page.locator('.shop-items article').filter({has:page.getByRole('heading',{name:'Mesa auxiliar'})}).getByRole('button',{name:'Guardar en inventario'}).click();
@@ -35,6 +35,6 @@ test('mesilla, escritorio y mesa comprada tienen vistas cercanas sin etiquetas f
   const point=await page.locator('.placement-grid').evaluate((svg,width)=>{const l=svg.querySelectorAll<SVGPolylineElement>('.grid-line'),a=l[0].points.getItem(0),b=l[0].points.getItem(1),n=Math.floor((width+.001)/.05),c=l[n].points.getItem(0),d=l[n].points.getItem(1),r=svg.getBoundingClientRect();return {clientX:r.x+(a.x+b.x+c.x+d.x)/4,clientY:r.y+(a.y+b.y+c.y+d.y)/4};},width);
   await room.locator('canvas').dispatchEvent('click',point);await expect(page.getByRole('button',{name:'Guardar posición'})).toBeEnabled();
  }
- await page.getByRole('button',{name:'Cancelar colocación'}).click();await page.getByRole('button',{name:'Salir del ordenador [Esc]'}).click();
+ await page.getByRole('button',{name:'Cancelar colocación'}).click();await page.getByRole('button',{name:'Salir del ordenador'}).click();
  await expect(room).toHaveAttribute('data-placed','table');
 });

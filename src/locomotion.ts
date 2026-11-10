@@ -1,3 +1,4 @@
+import {defaultControls,type Controls} from './controls';
 // Ground-plane movement shared by the bedroom and the collection room.
 export type WalkPoint={x:number;z:number};
 export type WalkObstacle={minX:number;maxX:number;minZ:number;maxZ:number;height?:number};
@@ -22,12 +23,12 @@ export function walkStep(position:WalkPoint,direction:WalkPoint,seconds:number,a
  }
  return next;
 }
-const movementCodes=new Set(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowLeft','ArrowDown','ArrowRight']);
+
 export class WalkKeyboard{
  private held=new Set<string>();
- constructor(private enabled:()=>boolean){window.addEventListener('keydown',this.down);window.addEventListener('keyup',this.up);window.addEventListener('blur',this.clear);document.addEventListener('visibilitychange',this.visibility);}
+ constructor(private enabled:()=>boolean,private getControls:()=>Controls=()=>defaultControls){window.addEventListener('keydown',this.down);window.addEventListener('keyup',this.up);window.addEventListener('blur',this.clear);document.addEventListener('visibilitychange',this.visibility);}
  private down=(event:KeyboardEvent)=>{
-  if(!this.enabled()||event.ctrlKey||event.metaKey||event.altKey||!movementCodes.has(event.code))return;
+  if(!this.enabled()||event.ctrlKey||event.metaKey||event.altKey||!(['forward','back','left','right'] as const).some(action=>this.getControls()[action].includes(event.code)))return;
   const target=event.target as HTMLElement|null;if(target?.closest('input,textarea,select,[contenteditable="true"],[role="dialog"]'))return;
   event.preventDefault();this.held.add(event.code);
  };
@@ -36,8 +37,8 @@ export class WalkKeyboard{
  clear=()=>{this.held.clear();};
  direction(yaw=0):WalkPoint{
   if(!this.enabled()){this.clear();return {x:0,z:0};}
-  const x=Number(this.held.has('KeyD')||this.held.has('ArrowRight'))-Number(this.held.has('KeyA')||this.held.has('ArrowLeft'));
-  const z=Number(this.held.has('KeyS')||this.held.has('ArrowDown'))-Number(this.held.has('KeyW')||this.held.has('ArrowUp'));
+  const controls=this.getControls();const isHeld=(keys:string[])=>keys.some(key=>this.held.has(key));const x=Number(isHeld(controls.right))-Number(isHeld(controls.left));
+  const z=Number(isHeld(controls.back))-Number(isHeld(controls.forward));
   return {x:x*Math.cos(yaw)+z*Math.sin(yaw),z:z*Math.cos(yaw)-x*Math.sin(yaw)};
  }
  dispose(){this.clear();window.removeEventListener('keydown',this.down);window.removeEventListener('keyup',this.up);window.removeEventListener('blur',this.clear);document.removeEventListener('visibilitychange',this.visibility);}
