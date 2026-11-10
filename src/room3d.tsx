@@ -207,6 +207,7 @@ class RoomEngine {
         }
       });
       await this.appearance.materials(this.root);
+      for(const wall of this.walls)this.originalColors.set(wall,wall.color.clone());
       if(this.disposed)return;
       cases.sort((a,b)=>a.userData.game_id-b.userData.game_id);
       for(const mesh of cases){

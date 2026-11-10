@@ -1,3 +1,4 @@
+import {applyBedroomWallPanels} from './wall-panels';
 import {currentWallpaper} from './wallpaper';
 import * as THREE from 'three';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
@@ -95,6 +96,7 @@ export class RoomAppearance {
         material.needsUpdate=true;
       }
     });
+    try{const wall=await new THREE.TextureLoader().loadAsync('./textures/plaster-wall.webp');if(this.disposed){wall.dispose();return;}wall.colorSpace=THREE.SRGBColorSpace;wall.anisotropy=Math.min(8,this.renderer.capabilities.getMaxAnisotropy());this.maps.push(wall);applyBedroomWallPanels(root,wall);}catch{}
     root.traverse(o=>{
       if(!(o instanceof THREE.Mesh))return;
       const name=o.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
