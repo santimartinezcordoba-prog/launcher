@@ -56,7 +56,7 @@ export function jumpStep(state:JumpState,seconds:number):JumpState{
 }
 
 export type PlayerState=WalkPoint&JumpState&{grounded:boolean};
-export const jumpSpeed=7.5;
+export const jumpSpeed=6;
 function overlaps(point:WalkPoint,box:WalkObstacle,radius=.22){const x=Math.max(box.minX,Math.min(box.maxX,point.x)),z=Math.max(box.minZ,Math.min(box.maxZ,point.z));return (point.x-x)**2+(point.z-z)**2<radius*radius;}
 /** Swept movement uses feet height: furniture has sides and a top you can land on. */
 export function playerStep(state:PlayerState,direction:WalkPoint,seconds:number,area:WalkArea,maxHeight=Infinity):PlayerState{

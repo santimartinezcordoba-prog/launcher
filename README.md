@@ -405,3 +405,8 @@ La mesa y la acción de insertar un juego se mantienen. Como el ordenador origin
 ## Salto ajustado (0.8.3)
 
 Se reduce la altura del salto manteniendo la posibilidad de subir a la cama, el escritorio y los ordenadores. La colisión del ordenador retro se ajusta al tamaño de su modelo.
+
+
+## Salto más bajo (0.8.4)
+
+El salto desde el suelo es más bajo y la cámara conserva una separación respecto al techo del dormitorio. Se puede seguir subiendo a la cama y saltar desde ella hacia otros muebles; los más altos pueden requerir una superficie intermedia.
