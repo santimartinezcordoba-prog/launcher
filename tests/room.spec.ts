@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 
 test('habitación: puerta, colección, ficha y vuelta con Escape', async ({page})=>{
   const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
-  await page.goto('/');
+  await page.goto('/');await page.getByRole('button',{name:/Entrar en la habitación/}).click();
   await expect(page.locator('main')).toHaveClass(/view-room/);
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-state','ready');
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-slots','0');
@@ -26,7 +26,7 @@ test('habitación: puerta, colección, ficha y vuelta con Escape', async ({page}
   expect(errors).toEqual([]);
 });
 test('buscador, filtros por tienda y género, estado vacío y restablecer',async({page})=>{
-  await page.goto('/');
+  await page.goto('/');await page.getByRole('button',{name:/Entrar en la habitación/}).click();
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-rendered','true');
   await page.keyboard.press('Control+k');
   await page.getByRole('textbox',{name:'Buscar en mi biblioteca'}).fill('Hollow');
@@ -41,12 +41,12 @@ test('buscador, filtros por tienda y género, estado vacío y restablecer',async
   await expect(page.locator('.card-details>button')).toHaveText('VALORANT');
 });
 test('favoritos persisten en la biblioteca',async({page})=>{
-  await page.goto('/');
+  await page.goto('/');await page.getByRole('button',{name:/Entrar en la habitación/}).click();
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-rendered','true');
   await page.keyboard.press('Control+k');
   await page.getByRole('textbox',{name:'Buscar en mi biblioteca'}).fill('Unpacking');
   await page.getByRole('button',{name:'Añadir a favoritos: Unpacking'}).click();
-  await page.reload();
+  await page.reload();await page.getByRole('button',{name:/Entrar en la habitación/}).click();
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-rendered','true');
   await page.keyboard.press('Control+k');
   await page.getByRole('navigation',{name:'Filtrar biblioteca'}).getByRole('button',{name:'Favoritos'}).click();
@@ -55,7 +55,7 @@ test('favoritos persisten en la biblioteca',async({page})=>{
   await expect(page.getByRole('button',{name:'Ver Unpacking',exact:true})).toBeVisible();
 });
 test('juego sin instalar muestra Descargar y explica el estado de demostración',async({page})=>{
-  await page.goto('/');
+  await page.goto('/');await page.getByRole('button',{name:/Entrar en la habitación/}).click();
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-rendered','true');
   await page.keyboard.press('Control+k');
   await page.getByRole('textbox',{name:'Buscar en mi biblioteca'}).fill('Red Dead');
@@ -66,7 +66,7 @@ test('juego sin instalar muestra Descargar y explica el estado de demostración'
 });
 test('ordenador, opciones de accesibilidad y personalización se conservan',async({page})=>{
   await page.addInitScript(()=>localStorage.setItem('room-collection-v1',JSON.stringify({claimed:['shelf'],owned:['customize'],equipped:[],seen:[],shelf:true,mood:false})));
-  await page.goto('/');
+  await page.goto('/');await page.getByRole('button',{name:/Entrar en la habitación/}).click();
   await legacySettings(page);
   await expect(page.getByRole('dialog')).toContainText('Riot Games');
   await page.getByRole('checkbox',{name:/Reducir animaciones/}).check();
@@ -77,7 +77,7 @@ test('ordenador, opciones de accesibilidad y personalización se conservan',asyn
   await page.getByRole('button',{name:'Paredes: Azul bruma'}).click();
   await page.getByRole('button',{name:'Sábanas: Terracota'}).click();
   await page.keyboard.press('Escape');
-  await page.reload();
+  await page.reload();await page.getByRole('button',{name:/Entrar en la habitación/}).click();
   await expect(page.locator('main')).toHaveClass(/mood-night/);
   await expect(page.locator('main')).toHaveClass(/reduce-motion/);
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-wall','#4a637d');
@@ -89,7 +89,7 @@ test('ordenador, opciones de accesibilidad y personalización se conservan',asyn
 });
 test('ventana compacta: biblioteca y diálogo utilizables',async({page})=>{
   await page.setViewportSize({width:1024,height:650});
-  await page.goto('/');
+  await page.goto('/');await page.getByRole('button',{name:/Entrar en la habitación/}).click();
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-rendered','true');
   await page.keyboard.press('Control+k');
   await expect(page.locator('.game-card')).toHaveCount(60);

@@ -2,7 +2,7 @@ import {computerApp} from './computer-helpers';
 import { test, expect } from '@playwright/test';
 import { chooseFloor } from './editor-helpers';
 test('misión, compra sin duplicados, inventario y persistencia',async({page})=>{
- await page.goto('/');
+ await page.goto('/');await page.getByRole('button',{name:/Entrar en la habitación/}).click();
  await computerApp(page,'Tienda');
  await expect(page.getByTestId('points')).toHaveText('0');
  await expect(page.getByRole('button',{name:'Comprar · 100 puntos'})).toBeDisabled();
@@ -24,7 +24,7 @@ test('misión, compra sin duplicados, inventario y persistencia',async({page})=>
  await page.getByRole('button',{name:'Guardar posición'}).click();
  await page.keyboard.press('Escape');
  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-placed','cat');
- await page.reload();
+ await page.reload();await page.getByRole('button',{name:/Entrar en la habitación/}).click();
  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-placed','cat');
  await computerApp(page,'Tienda');
  await expect(page.getByTestId('points')).toHaveText('0');
@@ -35,7 +35,7 @@ test('misión, compra sin duplicados, inventario y persistencia',async({page})=>
  await expect(page.getByRole('dialog')).toContainText('No hay cobros ni pagos activos');
 });
 test('estantería de platinos enlaza con trofeos de la ficha',async({page})=>{
- await page.goto('/');
+ await page.goto('/');await page.getByRole('button',{name:/Entrar en la habitación/}).click();
  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-state','ready');
  await expect(page.getByTestId('room-3d')).toHaveAttribute('data-placed','');
  await page.getByRole('button',{name:'Ver estantería de platinos'}).press('Enter');

@@ -1,7 +1,7 @@
 import {test,expect} from '@playwright/test';
 test.beforeEach(async({page})=>{await page.route(/^https:/,route=>route.abort());});
 test('contorno de silueta almacenado sin renders al mover el ratón',async({page})=>{
- await page.goto('/');const room=page.getByTestId('room-3d');await expect(room).toHaveAttribute('data-rendered','true');
+ await page.goto('/');await page.getByRole('button',{name:/Entrar en la habitación/}).click();const room=page.getByTestId('room-3d');await expect(room).toHaveAttribute('data-rendered','true');
  const computer=(await page.locator('[data-anchor="computer"]').boundingBox())!,canvas=room.locator('canvas');const frame=await room.getAttribute('data-frame');
  await canvas.dispatchEvent('pointermove',{clientX:computer.x+computer.width/2,clientY:computer.y+computer.height/2});
  await expect(room).toHaveAttribute('data-highlight','computer');await expect(page.locator('.interaction-outline image')).toBeVisible();
@@ -19,7 +19,7 @@ test('carátulas completas en ficha y galería; arte de cajas y recuperación de
  // Fixture portrait has border lines and a full title; the app must not crop it.
  const poster='<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900"><rect width="600" height="900" fill="#25628a"/><rect x="5" y="5" width="590" height="890" fill="none" stroke="#ffe6a1" stroke-width="10"/><path d="M0 600L300 180l300 420Z" fill="#18282f"/><text x="30" y="840" fill="white" font-size="65">GAME COVER</text></svg>';
  await page.route(/^https:/,route=>route.fulfill({body:poster,contentType:'image/svg+xml',headers:{'access-control-allow-origin':'*'}}));
- await page.goto('/');const room=page.getByTestId('room-3d');await expect(room).toHaveAttribute('data-rendered','true');
+ await page.goto('/');await page.getByRole('button',{name:/Entrar en la habitación/}).click();const room=page.getByTestId('room-3d');await expect(room).toHaveAttribute('data-rendered','true');
 
  await page.keyboard.press('Control+k');const first=page.locator('.game-art').first();await expect(first.locator('img')).toHaveCSS('object-fit','contain');
  const box=(await first.boundingBox())!;expect(box.width/box.height).toBeCloseTo(2/3,1);

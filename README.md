@@ -410,3 +410,8 @@ Se reduce la altura del salto manteniendo la posibilidad de subir a la cama, el 
 ## Salto más bajo (0.8.4)
 
 El salto desde el suelo es más bajo y la cámara conserva una separación respecto al techo del dormitorio. Se puede seguir subiendo a la cama y saltar desde ella hacia otros muebles; los más altos pueden requerir una superficie intermedia.
+
+
+## Elección al iniciar (0.8.5)
+
+Al abrir la aplicación se elige entre entrar directamente a la biblioteca o a la habitación. La biblioteca directa no carga escenas 3D ni pide elegir personaje; desde ella se puede entrar a la habitación. La elección aparece de nuevo al recargar.

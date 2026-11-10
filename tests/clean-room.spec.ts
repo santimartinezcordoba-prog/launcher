@@ -3,7 +3,7 @@ import {test,expect} from '@playwright/test';
 import {chooseFloor,chooseShelf} from './editor-helpers';
 
 test('contorno de puerta sin render extra y biblioteca desde la sala',async({page})=>{
- await page.goto('/');const room=page.getByTestId('room-3d');
+ await page.goto('/');await page.getByRole('button',{name:/Entrar en la habitación/}).click();const room=page.getByTestId('room-3d');
  await expect(room).toHaveAttribute('data-rendered','true');await expect(room).toHaveAttribute('data-motion','idle');
  await expect(page.locator('.welcome,.room-hover')).toHaveCount(0);
  await expect(page.getByRole('button',{name:'Entrar en la sala de colección'})).toBeVisible();
@@ -25,7 +25,7 @@ test('contorno de puerta sin render extra y biblioteca desde la sala',async({pag
 
 test('muebles y figuras: plano, baldas, colisiones, giro, cancelación y persistencia',async({page})=>{
  await page.addInitScript(()=>{if(!localStorage.getItem('room-collection-v1'))localStorage.setItem('room-collection-v1',JSON.stringify({claimed:['shelf','discover','mood'],owned:['cat'],equipped:[],seen:[0,1,2],shelf:true,mood:true}));});
- await page.goto('/');const room=page.getByTestId('room-3d');await expect(room).toHaveAttribute('data-rendered','true');
+ await page.goto('/');await page.getByRole('button',{name:/Entrar en la habitación/}).click();const room=page.getByTestId('room-3d');await expect(room).toHaveAttribute('data-rendered','true');
  await computerApp(page,'Tienda');
  await page.locator('.shop-items article').filter({has:page.getByRole('heading',{name:'Planta de interior'})}).getByRole('button').click();
  await expect(page.getByTestId('points')).toHaveText('240');
@@ -45,7 +45,7 @@ test('muebles y figuras: plano, baldas, colisiones, giro, cancelación y persist
  await page.getByRole('button',{name:'Guardar posición'}).click();
  await page.keyboard.press('Escape');
  await expect(room).toHaveAttribute('data-placed',/cat/);await expect(room).toHaveAttribute('data-placed',/plant/);
- await page.reload();await expect(room).toHaveAttribute('data-positions',/"plant":\[0,0,0.4\]/);
+ await page.reload();await page.getByRole('button',{name:/Entrar en la habitación/}).click();await expect(room).toHaveAttribute('data-positions',/"plant":\[0,0,0.4\]/);
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('room-collection-v1')!));
  expect(saved.arranged.plant.rotation).toBe(15);expect(saved.arranged.cat.surface).toBe('shelves');
  await computerApp(page,'Tienda');
@@ -57,7 +57,7 @@ test('muebles y figuras: plano, baldas, colisiones, giro, cancelación y persist
 
 test('la ficha usa una imagen real y conserva una ilustración si no hay red',async({page})=>{
  await page.route('https://cdn.cloudflare.steamstatic.com/**',async route=>route.fulfill({path:'public/images/artwork-offline.svg',contentType:'image/svg+xml'}));
- await page.goto('/');await expect(page.getByTestId('room-3d')).toHaveAttribute('data-rendered','true');await page.keyboard.press('Control+k');
+ await page.goto('/');await page.getByRole('button',{name:/Entrar en la habitación/}).click();await expect(page.getByTestId('room-3d')).toHaveAttribute('data-rendered','true');await page.keyboard.press('Control+k');
  await page.getByRole('textbox',{name:'Buscar en mi biblioteca'}).fill('Hollow');
  await page.getByRole('button',{name:'Ver Hollow Knight',exact:true}).click();
  const image=page.getByRole('dialog').getByRole('img',{name:'Póster de Hollow Knight'});
@@ -71,10 +71,10 @@ test('la ficha usa una imagen real y conserva una ilustración si no hay red',as
 
 test('las posiciones antiguas del inventario se conservan al migrar al editor',async({page})=>{
  await page.addInitScript(()=>{if(!localStorage.getItem('room-collection-v1'))localStorage.setItem('room-collection-v1',JSON.stringify({claimed:['shelf','discover','mood'],owned:['cat','robot'],equipped:['cat','robot'],placements:{cat:'nightstand',robot:'desk-left'},rotations:{cat:90,robot:180},seen:[0,1,2],shelf:true,mood:true}));});
- await page.goto('/');const room=page.getByTestId('room-3d');
+ await page.goto('/');await page.getByRole('button',{name:/Entrar en la habitación/}).click();const room=page.getByTestId('room-3d');
  await expect(room).toHaveAttribute('data-positions',/"cat":\[-2.74,0.685,-1.91\]/);
  await expect(room).toHaveAttribute('data-positions',/"robot":\[2.5,0.82,-0.94\]/);
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('room-collection-v1')!));
  expect(saved.arranged.cat.rotation).toBe(90);expect(saved.arranged.robot.rotation).toBe(180);
- await page.reload();await expect(room).toHaveAttribute('data-placed','cat|robot');
+ await page.reload();await page.getByRole('button',{name:/Entrar en la habitación/}).click();await expect(room).toHaveAttribute('data-placed','cat|robot');
 });

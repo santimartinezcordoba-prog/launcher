@@ -4,7 +4,7 @@ import { chooseShelf } from './editor-helpers';
 
 test('los clics sobre las mallas abren ordenador y trofeos, y la cámara vuelve a la entrada',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('/');
+  await page.goto('/');await page.getByRole('button',{name:/Entrar en la habitación/}).click();
   const room=page.getByTestId('room-3d');
   await expect(room).toHaveAttribute('data-rendered','true');
   const canvas=room.locator('canvas');
@@ -28,7 +28,7 @@ test('los clics sobre las mallas abren ordenador y trofeos, y la cámara vuelve 
 
 test('figura importada se compra, carga como objeto 3D y se retira sin perderla',async({page})=>{
   await page.addInitScript(()=>localStorage.setItem('room-collection-v1',JSON.stringify({claimed:['shelf','discover','mood'],owned:[],equipped:[],seen:[0,1,2],shelf:true,mood:true})));
-  await page.goto('/');
+  await page.goto('/');await page.getByRole('button',{name:/Entrar en la habitación/}).click();
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-state','ready');
   await legacySettings(page);
   const item=page.locator('.shop-items article').filter({has:page.getByRole('heading',{name:'Figura del mago'})});
@@ -48,7 +48,7 @@ test('figura importada se compra, carga como objeto 3D y se retira sin perderla'
 
 test('si falla el GLB, la biblioteca sigue disponible y permite reintentar',async({page})=>{
   await page.route('**/models/room.glb',route=>route.abort());
-  await page.goto('/');
+  await page.goto('/');await page.getByRole('button',{name:/Entrar en la habitación/}).click();
   await expect(page.getByRole('alert')).toContainText('No se pudo abrir la habitación 3D');
   await page.getByRole('button',{name:'Abrir biblioteca',exact:true}).click();
   await expect(page.locator('.game-card')).toHaveCount(60);

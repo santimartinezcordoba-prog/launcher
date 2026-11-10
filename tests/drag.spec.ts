@@ -7,7 +7,7 @@ async function canvasPoint(page:import('@playwright/test').Page,x:number,z:numbe
 async function openInventory(page:import('@playwright/test').Page){await computerApp(page,'Tienda');await page.getByRole('button',{name:'Inventario',exact:true}).click();}
 test('arrastra en el plano, confirma la posición final y conserva adornos sobre una mesa al moverla',async({page})=>{
  await page.addInitScript(()=>{if(!localStorage.getItem('room-collection-v1'))localStorage.setItem('room-collection-v1',JSON.stringify({owned:['table','cat'],equipped:['table','cat'],claimed:['shelf','discover','mood'],seen:[0,1,2],arranged:{table:{surface:'floor',x:0,y:0,z:.4,rotation:0},cat:{surface:'table',x:0,y:.69,z:.4,rotation:0}}}));});
- await page.goto('/');const room=page.getByTestId('room-3d');await expect(room).toHaveAttribute('data-placed','cat|table');
+ await page.goto('/');await page.getByRole('button',{name:/Entrar en la habitación/}).click();const room=page.getByTestId('room-3d');await expect(room).toHaveAttribute('data-placed','cat|table');
  await expect(page.getByRole('button',{name:'Abrir biblioteca',exact:true})).toHaveCount(0);
  await openInventory(page);
  await page.locator('.shop-items article').filter({has:page.getByRole('heading',{name:'Mesa auxiliar'})}).getByRole('button',{name:'Mover objeto'}).click();
@@ -18,14 +18,14 @@ test('arrastra en el plano, confirma la posición final y conserva adornos sobre
  await expect(room).toHaveAttribute('data-positions',/"table":\[0.8,0,1.6\]/);
  await expect(room).toHaveAttribute('data-positions',/"cat":\[0.8,0.69,1.6\]/);
  await page.getByRole('button',{name:'Guardar posición'}).click();await page.getByRole('button',{name:'Cerrar ajustes'}).click();
- await page.reload();await expect(room).toHaveAttribute('data-positions',/"cat":\[0.8,0.69,1.6\]/);
+ await page.reload();await page.getByRole('button',{name:/Entrar en la habitación/}).click();await expect(room).toHaveAttribute('data-positions',/"cat":\[0.8,0.69,1.6\]/);
  await openInventory(page);
  await page.locator('.shop-items article').filter({has:page.getByRole('heading',{name:'Mesa auxiliar'})}).getByRole('button',{name:'Guardar en inventario'}).click();
  await expect(room).toHaveAttribute('data-placed','');
 });
 test('mesilla, escritorio y mesa comprada tienen vistas cercanas sin etiquetas flotantes',async({page})=>{
  await page.addInitScript(()=>localStorage.setItem('room-collection-v1',JSON.stringify({owned:['cat','table'],equipped:['table'],arranged:{table:{surface:'floor',x:0,y:0,z:1,rotation:0}},claimed:['shelf','discover','mood'],seen:[0,1,2]})));
- await page.goto('/');await openInventory(page);
+ await page.goto('/');await page.getByRole('button',{name:/Entrar en la habitación/}).click();await openInventory(page);
  await page.locator('.shop-items article').filter({has:page.getByRole('heading',{name:'Gato de medianoche'})}).getByRole('button',{name:'Colocar en habitación'}).click();
  const room=page.getByTestId('room-3d');
  for(const [surface,name,width] of [['nightstand','Mesilla',.54],['desk','Escritorio',.38],['table','Mesa auxiliar',.85]] as const){
