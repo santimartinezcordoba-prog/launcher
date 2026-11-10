@@ -1,4 +1,4 @@
-import {legacySettings} from './computer-helpers';
+import {computerApp} from './computer-helpers';
 import { test, expect } from '@playwright/test';
 import { chooseShelf } from './editor-helpers';
 
@@ -14,8 +14,7 @@ test('los clics sobre las mallas abren ordenador y trofeos, y la cámara vuelve 
   await canvas.dispatchEvent('click',{clientX:computer.x+computer.width/2,clientY:computer.y+computer.height/2});
   await expect(page.getByRole('dialog',{name:'BOLL OS'})).toBeVisible();
   await page.keyboard.press('Escape');
-  await legacySettings(page);
-  await page.getByRole('button',{name:'Mis platinos',exact:true}).click();
+  await page.getByRole('button',{name:'Ver estantería de platinos'}).press('Enter');
   await expect(page.getByRole('dialog',{name:'Estantería de platinos'})).toBeVisible();
   await page.keyboard.press('Escape');
   const door=(await page.locator('[data-anchor="shelf"]').boundingBox())!;
@@ -30,7 +29,7 @@ test('figura importada se compra, carga como objeto 3D y se retira sin perderla'
   await page.addInitScript(()=>localStorage.setItem('room-collection-v1',JSON.stringify({claimed:['shelf','discover','mood'],owned:[],equipped:[],seen:[0,1,2],shelf:true,mood:true})));
   await page.goto('/');await page.getByRole('button',{name:/Entrar en la habitación/}).click();
   await expect(page.getByTestId('room-3d')).toHaveAttribute('data-state','ready');
-  await legacySettings(page);
+  await computerApp(page,'Tienda');
   const item=page.locator('.shop-items article').filter({has:page.getByRole('heading',{name:'Figura del mago'})});
   await item.getByRole('button',{name:'Comprar · 250 puntos'}).click();
   await expect(page.getByTestId('points')).toHaveText('150');

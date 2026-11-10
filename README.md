@@ -415,3 +415,8 @@ El salto desde el suelo es más bajo y la cámara conserva una separación respe
 ## Elección al iniciar (0.8.5)
 
 Al abrir la aplicación se elige entre entrar directamente a la biblioteca o a la habitación. La biblioteca directa no carga escenas 3D ni pide elegir personaje; desde ella se puede entrar a la habitación. La elección aparece de nuevo al recargar.
+
+
+## Configuración separada de la tienda (0.8.6)
+
+La rueda de la biblioteca y los ajustes del menú de pausa abren configuración de la aplicación: accesibilidad, controles, personaje al iniciar y plataformas. La tienda, el personaje, las misiones y el inventario se consultan en BOLL/OS, dentro de la tienda del ordenador. Al terminar de colocar un objeto se vuelve al inventario.
