@@ -5,7 +5,7 @@ import { BookOpen } from 'lucide-react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import {tileFloor} from './tile-floor';
 import { type Game } from './games';
 import './room3d.css';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -258,35 +258,8 @@ class RoomEngine {
   }
 
   mergeFloor(){
-    const groups=new Map<string,THREE.Mesh[]>();
-    this.root!.traverse(o=>{
-      if(!(o instanceof THREE.Mesh)||!normalName(o.name).startsWith('lama de parquet'))return;
-      const m=o.material as THREE.MeshStandardMaterial;
-      const key=`${m.color.getHexString()}/${m.roughness}/${m.metalness}`;
-      const list=groups.get(key)??[];list.push(o);groups.set(key,list);
-    });
-    const originals=[...groups.values()].flat();
-    if(!originals.length)return;
-    const sample=originals[0].material as THREE.MeshStandardMaterial;
-    const grain=sample.map?.clone();if(grain){grain.repeat.set(1,.18);grain.needsUpdate=true;}
-    const batches:THREE.BufferGeometry[][]=[[],[],[],[]];
-    // Narrow boards with staggered joints, rather than a grid of square tiles.
-    for(let row=0;row<48;row++){
-      const offset=row%3*.37;
-      for(let column=-1;column<7;column++){
-        const left=Math.max(-3.3,-3.3+column*1.1+offset),right=Math.min(3.3,-3.3+(column+1)*1.1+offset);
-        if(right-left<.01)continue;
-        const geometry=new THREE.BoxGeometry(right-left-.002,.02,.148);
-        geometry.translate((left+right)/2,-.0095,-3.6+(row+.5)*.15);
-        batches[(row*7+column+5)%4].push(geometry);
-      }
-    }
-    batches.forEach((parts,index)=>{
-      const geometry=mergeGeometries(parts);parts.forEach(g=>g.dispose());if(!geometry)return;
-      const material=sample.clone();material.map=grain??null;material.bumpMap=grain??null;material.color.multiplyScalar(.91+index*.045);
-      const floor=new THREE.Mesh(geometry,material);floor.receiveShadow=true;floor.name='Parquet optimizado';this.scene.add(floor);
-    });
-    originals.forEach(o=>o.visible=false);
+    this.root!.traverse(o=>{if(o instanceof THREE.Mesh&&normalName(o.name).startsWith('lama de parquet'))o.visible=false;});
+    const floor=tileFloor(6.6,7.2,()=>{this.dirty=true;});this.scene.add(floor);
   }
 
   apply(){
