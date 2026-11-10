@@ -3,7 +3,7 @@ export const wallpaperKey='room-wallpaper-v1';
 export const defaultWallpaper='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720"><path fill="#183b48" d="M0 0h1280v720H0z"/><path fill="#2f6870" d="M0 480h160V320h160v160h160V240h160v80h160v160h160V160h160v320h160v240H0z"/><path fill="#83b8a0" d="M0 640h320V480h160v80h320V400h160v160h320v160H0z"/><path fill="#f0c879" d="M960 80h80v80h-80z"/></svg>');
 export function currentWallpaper(){try{const value=localStorage.getItem(wallpaperKey);return value?.startsWith('data:image/')?value:defaultWallpaper;}catch{return defaultWallpaper;}}
 function mode(){try{return localStorage.getItem('room-wallpaper-mode');}catch{return null;}}
-declare global{interface Window{roomDesktop?:{getWallpaper:()=>Promise<string|null>}}}
+declare global{interface Window{roomDesktop?:{getWallpaper:()=>Promise<string|null>;quit?:()=>void}}}
 export function canSyncWallpaper(){return !!window.roomDesktop||['localhost','127.0.0.1','[::1]'].includes(location.hostname);}
 let pending:Promise<string|null>|undefined;
 async function systemWallpaper(){

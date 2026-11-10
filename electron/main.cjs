@@ -8,6 +8,7 @@ protocol.registerSchemesAsPrivileged([
   { scheme: 'room', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }
 ]);
 app.whenReady().then(() => {
+  ipcMain.on('room:quit',event=>{if(event.senderFrame?.url==='room://launcher/index.html')app.quit();});
   ipcMain.handle('room:get-wallpaper',event=>event.senderFrame?.url==='room://launcher/index.html'?require('./wallpaper.cjs').getWallpaper():null);
   const dist = path.resolve(__dirname, '..', 'dist');
   protocol.handle('room', async request => {
