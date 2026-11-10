@@ -1,3 +1,4 @@
+import {addWallRelief} from './wall-panels';
 import {makeMirror} from './mirror';
 import { useEffect, useRef, useState } from 'react';
 import { GameArt } from './game-art';
@@ -240,6 +241,7 @@ class RoomEngine {
       part(.48,1.18,.12,.08,.22,.05,metal);part(.4,1.18,.16,.25,.04,.04,metal);
       for(const y of [.7,1.9])part(0,y,.075,1.08,.72,.035,frameMat);
       this.cacheInteractionTargets();
+      addWallRelief(this.scene,'bedroom');
       this.mergeFloor();
       const floatingPoint=this.renderer.extensions.has('EXT_color_buffer_float');
       const target=new THREE.WebGLRenderTarget(1,1,{type:floatingPoint?THREE.HalfFloatType:THREE.UnsignedByteType});
